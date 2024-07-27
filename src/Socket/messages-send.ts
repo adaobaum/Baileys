@@ -261,74 +261,6 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 		return didFetchNewSession
 	}
 
-  const assertGroupSessions = async (
-  jids: string[],
-  force: boolean,
-  batchSize: number = 257,  // Valor padrão de 257
-  delay: number = 100      // Valor padrão de 100ms
-) => {
-  let didFetchNewSession = false;
-  let jidsRequiringFetch: string[] = [];
-
-  if (force) {
-    jidsRequiringFetch = jids;
-  } else {
-    const addrs = jids.map(jid => signalRepository.jidToSignalProtocolAddress(jid));
-    const sessions = await authState.keys.get('session', addrs);
-
-    const processBatch = (batch: string[]) => {
-      return new Promise<void>((resolve) => {
-        for (const jid of batch) {
-          const signalId = signalRepository.jidToSignalProtocolAddress(jid);
-          if (!sessions[signalId]) {
-            jidsRequiringFetch.push(jid);
-          }
-        }
-        resolve();
-      });
-    };
-
-    const processInBatches = async (jids: string[], batchSize: number, delay: number) => {
-      for (let i = 0; i < jids.length; i += batchSize) {
-        const batch = jids.slice(i, i + batchSize);
-        await processBatch(batch);
-        if (i + batchSize < jids.length) {
-          await new Promise(resolve => setTimeout(resolve, delay));
-        }
-      }
-    };
-
-    await processInBatches(jids, batchSize, delay);
-  }
-
-  if (jidsRequiringFetch.length) {
-    logger.debug({ jidsRequiringFetch }, 'fetching sessions');
-    const result = await query({
-      tag: 'iq',
-      attrs: {
-        xmlns: 'encrypt',
-        type: 'get',
-        to: S_WHATSAPP_NET,
-      },
-      content: [
-        {
-          tag: 'key',
-          attrs: {},
-          content: jidsRequiringFetch.map(jid => ({
-            tag: 'user',
-            attrs: { jid },
-          })),
-        },
-      ],
-    });
-    await parseAndInjectE2ESessions(result, signalRepository);
-
-    didFetchNewSession = true;
-  }
-
-  return didFetchNewSession;
-};
-
 
 	const createParticipantNodes = async(
 		jids: string[],
@@ -481,7 +413,12 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 							}
 						}
 
-						await assertSessions(senderKeyJids, false)
+						
+						const batchSize = 257; // Tamanho do lote
+						for (let i = 0; i < senderKeyJids.length; i += batchSize) {
+							const batch = senderKeyJids.slice(i, i + batchSize);
+							await assertSessions(batch, false);
+						}
 
 						const result = await createParticipantNodes(senderKeyJids, senderKeyMsg, mediaType ? { mediatype: mediaType } : undefined)
 						shouldIncludeDeviceIdentity = shouldIncludeDeviceIdentity || result.shouldIncludeDeviceIdentity
