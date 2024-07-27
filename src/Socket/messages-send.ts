@@ -481,7 +481,7 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 							}
 						}
 
-						await assertGroupSessions(senderKeyJids, false)
+						await assertSessions(senderKeyJids, false)
 
 						const result = await createParticipantNodes(senderKeyJids, senderKeyMsg, mediaType ? { mediatype: mediaType } : undefined)
 						shouldIncludeDeviceIdentity = shouldIncludeDeviceIdentity || result.shouldIncludeDeviceIdentity
