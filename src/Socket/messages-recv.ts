@@ -545,11 +545,11 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		let forcePrekeys: boolean;
 		if(cachePrekey)
 		{
-		  let forcePrekeys = false;
+		   forcePrekeys = false;
 		}
 		else
 		{
-		 let forcePrekeys = false;
+		  forcePrekeys = true;
 		 await msgRetryCache.set(participant+'_'+remoteJid);	
 		}
 		//const verify = await assertSessions([participant], config.forceGroupsPrekeys !== undefined ? config.forceGroupsPrekeys : true);
