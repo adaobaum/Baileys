@@ -542,7 +542,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		// prevents the first message decryption failure
 		const sendToAll = !jidDecode(participant)?.device
 		const cachePrekey = await msgRetryCache.get(participant+'_'+remoteJid);
-		let forcePrekeys = true;
+		let forcePrekeys: boolean;
 		if(cachePrekey)
 		{
 		   forcePrekeys = false;
@@ -550,7 +550,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		else
 		{
 		  forcePrekeys = true;
-		 await msgRetryCache.set(participant+'_'+remoteJid);	
+		  await msgRetryCache.set(participant + '_' + remoteJid, true);	
 		}
 		//const verify = await assertSessions([participant], config.forceGroupsPrekeys !== undefined ? config.forceGroupsPrekeys : true);
 		const verify = await assertSessions([participant], forcePrekeys);
