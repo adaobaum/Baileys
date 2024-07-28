@@ -542,7 +542,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		// prevents the first message decryption failure
 		const sendToAll = !jidDecode(participant)?.device
 		const cachePrekey = await msgRetryCache.get(participant+'_'+remoteJid);
-		let forcePrekeys: boolean;
+		let forcePrekeys;
 		if(cachePrekey)
 		{
 		   forcePrekeys = false;
