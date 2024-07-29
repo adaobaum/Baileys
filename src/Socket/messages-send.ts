@@ -446,10 +446,11 @@ export const makeMessagesSocket = (config: SocketConfig) => {
         							}
 
 							}
-						     }	
-						}	
+						     }
 						await GroupsCache.set(destinationJid, true);
-						}
+						}	
+						
+						
 						await assertSessions(senderKeyJids, false);
 
 						const result = await createParticipantNodes(senderKeyJids, senderKeyMsg, mediaType ? { mediatype: mediaType } : undefined)
