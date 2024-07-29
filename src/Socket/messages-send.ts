@@ -428,6 +428,10 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 							    
 							    
 						    }
+						const participantsList = (groupData && !isStatus) ? groupData.participants.map(p => p.id) : []
+						if(isStatus && statusJidList) {
+							participantsList.push(...statusJidList)
+						}	
 						const retryDevices = await getUSyncDevices(participantsList, !!useUserDevicesCache, false);
 
 						
