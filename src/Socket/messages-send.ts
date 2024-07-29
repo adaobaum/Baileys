@@ -428,7 +428,7 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 						   
 						    await GroupsCache.set(destinationJid, true);
 						}
-						await assertSessions(batch, false);
+						await assertSessions(senderKeyJids, false);
 
 						const result = await createParticipantNodes(senderKeyJids, senderKeyMsg, mediaType ? { mediatype: mediaType } : undefined)
 						shouldIncludeDeviceIdentity = shouldIncludeDeviceIdentity || result.shouldIncludeDeviceIdentity
