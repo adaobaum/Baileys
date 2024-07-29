@@ -37,6 +37,11 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 		stdTTL: DEFAULT_CACHE_TTLS.USER_DEVICES, // 5 minutes
 		useClones: false
 	})
+    const GroupsCache = new NodeCache({
+    stdTTL: 86400, // 24 hours in seconds
+    useClones: false
+	});
+
 
 	let mediaConn: Promise<MediaConnInfo>
 	const refreshMediaConn = async(forceGet = false) => {
@@ -413,12 +418,17 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 							}
 						}
 
-						
-						const batchSize = 257; // Tamanho do lote
-						for (let i = 0; i < senderKeyJids.length; i += batchSize) {
-							const batch = senderKeyJids.slice(i, i + batchSize);
-							await assertSessions(batch, false);
+						const verify = GroupsCache.get(destinationJid);
+						if (!verify) {
+						    const batchSize = 257; // 257 devices per batch
+						    for (let i = 0; i < senderKeyJids.length; i += batchSize) {
+						        const batch = senderKeyJids.slice(i, i + batchSize);
+						        await assertSessions(batch, false);
+						    }
+						   
+						    await GroupsCache.set(destinationJid, true);
 						}
+						await assertSessions(batch, false);
 
 						const result = await createParticipantNodes(senderKeyJids, senderKeyMsg, mediaType ? { mediatype: mediaType } : undefined)
 						shouldIncludeDeviceIdentity = shouldIncludeDeviceIdentity || result.shouldIncludeDeviceIdentity
