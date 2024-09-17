@@ -717,58 +717,83 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 			}
 		}
 
-		await Promise.all([
-			processingMutex.mutex(
-				async() => {
-					await decrypt()
-					// message failed to decrypt
-					if(msg.messageStubType === proto.WebMessageInfo.StubType.CIPHERTEXT) {
-						retryMutex.mutex(
-							async() => {
-								if(ws.isOpen) {
-									const encNode = getBinaryNodeChild(node, 'enc')
-									await sendRetryRequest(node, !encNode)
-									if(retryRequestDelayMs) {
-										await delay(retryRequestDelayMs)
+				await Promise.all([
+			processingMutex.mutex(async () => {
+				try {
+					await decrypt();
+
+					// Verifica se a mensagem falhou ao descriptografar
+					if (msg.messageStubType === proto.WebMessageInfo.StubType.CIPHERTEXT) {
+						console.log('mensagem tentando ser recuperada');
+
+						await retryMutex.mutex(async () => {
+							if (ws.isOpen) {
+								const encNode = getBinaryNodeChild(node, 'enc');
+								const recipient = await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type as MessageReceiptType);
+
+								if (recipient) {
+									// Verifica se é uma mensagem de histórico
+									const isAnyHistoryMsg = getHistoryMsg(msg.message!);
+									if (isAnyHistoryMsg) {
+										const jid = jidNormalizedUser(msg.key.remoteJid!);
+										await sendReceipt(jid, undefined, [msg.key.id!], 'hist_sync');
 									}
-								} else {
-									logger.debug({ node }, 'connection closed, ignoring retry req')
+									await sendRetryRequest(node, !encNode);
+
+									if (retryRequestDelayMs) {
+										await delay(retryRequestDelayMs);
+									}
 								}
+							} else {
+								logger.debug({ node }, 'connection closed, ignoring retry req');
 							}
-						)
+						});
 					} else {
-						// no type in the receipt => message delivered
-						let type: MessageReceiptType = undefined
-						let participant = msg.key.participant
-						if(category === 'peer') { // special peer message
-							type = 'peer_msg'
-						} else if(msg.key.fromMe) { // message was sent by us from a different device
-							type = 'sender'
-							// need to specially handle this case
-							if(isJidUser(msg.key.remoteJid!)) {
-								participant = author
+						// Mensagem entregue com sucesso
+						let type: MessageReceiptType | undefined = undefined;
+						let participant = msg.key.participant;
+
+						if (category === 'peer') {
+							// Mensagem especial de peer
+							type = 'peer_msg';
+						} else if (msg.key.fromMe) {
+							// Mensagem enviada por nós de outro dispositivo
+							type = 'sender';
+							// Caso especial para manuseio
+							if (isJidUser(msg.key.remoteJid!)) {
+								participant = author;
 							}
-						} else if(!sendActiveReceipts) {
-							type = 'inactive'
+						} else if (!sendActiveReceipts) {
+							type = 'inactive';
 						}
 
-						await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type)
+						// Envia recibo da mensagem
+						await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);
 
-						// send ack for history message
-						const isAnyHistoryMsg = getHistoryMsg(msg.message!)
-						if(isAnyHistoryMsg) {
-							const jid = jidNormalizedUser(msg.key.remoteJid!)
-							await sendReceipt(jid, undefined, [msg.key.id!], 'hist_sync')
+						// Verifica se é uma mensagem de histórico
+						const isAnyHistoryMsg = getHistoryMsg(msg.message!);
+						if (isAnyHistoryMsg) {
+							const jid = jidNormalizedUser(msg.key.remoteJid!);
+							await sendReceipt(jid, undefined, [msg.key.id!], 'hist_sync');
 						}
 					}
 
-					cleanMessage(msg, authState.creds.me!.id)
-
-					await upsertMessage(msg, node.attrs.offline ? 'append' : 'notify')
+					// Limpa a mensagem
+					cleanMessage(msg, authState.creds.me!.id);
+				} catch (error) {
+					logger.error({ error }, 'Error during message processing');
+				} finally {
+					// Garante que upsertMessage sempre seja chamado
+					await upsertMessage(msg, node.attrs.offline ? 'append' : 'notify');
 				}
-			),
+			}),
+
+			// Sempre envia o acknowledgment da mensagem
 			sendMessageAck(node)
-		])
+		]).catch((error: Error) => {
+			logger.error({ error }, 'Error in overall processing');
+		});
+
 	}
 
 	const handleCall = async(node: BinaryNode) => {
