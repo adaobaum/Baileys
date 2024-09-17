@@ -100,7 +100,8 @@ class GroupCipher {
       return plaintext;
     } catch (e) {
       //console.log(e.stack);
-      throw new Error('InvalidMessageException');
+      //throw new Error('InvalidMessageException');
+      return null
     }
   }
 
