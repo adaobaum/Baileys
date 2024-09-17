@@ -727,9 +727,29 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 						console.log('mensagem tentando ser recuperada');
 
 						await retryMutex.mutex(async () => {
-							if (ws.isOpen) {
+							if (ws.isOpen) { 
+
+								 let type = undefined;
+                        let participant = msg.key.participant;
+                        
+                        if (category === 'peer') { 
+                            // Mensagem especial de peer
+                            type = 'peer_msg';
+                        } else if (msg.key.fromMe) {
+                            // Mensagem enviada por nós de outro dispositivo
+                            type = 'sender';
+                            // Caso especial para manuseio
+                            if ((0, WABinary_1.isJidUser)(msg.key.remoteJid)) {
+                                participant = author;
+                            }
+                        } else if (!sendActiveReceipts) {
+                            type = 'inactive';
+                        }      
+                        
+                                
+
 								const encNode = getBinaryNodeChild(node, 'enc');
-								const recipient = await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type as MessageReceiptType);
+								const recipient = await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);
 
 								if (recipient) {
 									// Verifica se é uma mensagem de histórico
@@ -750,8 +770,9 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 						});
 					} else {
 						// Mensagem entregue com sucesso
-						let type: MessageReceiptType | undefined = undefined;
-						let participant = msg.key.participant;
+							 let type = undefined;
+                        	let participant = msg.key.participant;
+                        
 
 						if (category === 'peer') {
 							// Mensagem especial de peer
@@ -781,7 +802,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 					// Limpa a mensagem
 					cleanMessage(msg, authState.creds.me!.id);
 				} catch (error) {
-					logger.error({ error }, 'Error during message processing');
+					logger.error({ error }, 'Erro ao decriptar a mensagem, fazendo nova tentativa..');
 				} finally {
 					// Garante que upsertMessage sempre seja chamado
 					await upsertMessage(msg, node.attrs.offline ? 'append' : 'notify');
