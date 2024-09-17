@@ -717,103 +717,83 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 			}
 		}
 
-				await Promise.all([
-			processingMutex.mutex(async () => {
-				try {
-					await decrypt();
+					await Promise.all([
+				processingMutex.mutex(
+					async () => {
 
-					// Verifica se a mensagem falhou ao descriptografar
-					if (msg.messageStubType === proto.WebMessageInfo.StubType.CIPHERTEXT) {
-						console.log('mensagem tentando ser recuperada');
+						let type: MessageReceiptType | undefined = undefined;
+								let participant = msg.key.participant;
 
-						await retryMutex.mutex(async () => {
-							if (ws.isOpen) { 
-
-								 let type = undefined;
-                        let participant = msg.key.participant;
-                        
-                        if (category === 'peer') { 
-                            // Mensagem especial de peer
-                            type = 'peer_msg';
-                        } else if (msg.key.fromMe) {
-                            // Mensagem enviada por nós de outro dispositivo
-                            type = 'sender';
-                            // Caso especial para manuseio
-                            if ((0, WABinary_1.isJidUser)(msg.key.remoteJid)) {
-                                participant = author;
-                            }
-                        } else if (!sendActiveReceipts) {
-                            type = 'inactive';
-                        }      
-                        
-                                
-
-								const encNode = getBinaryNodeChild(node, 'enc');
-								const recipient = await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);
-
-								if (recipient) {
-									// Verifica se é uma mensagem de histórico
-									const isAnyHistoryMsg = getHistoryMsg(msg.message!);
-									if (isAnyHistoryMsg) {
-										const jid = jidNormalizedUser(msg.key.remoteJid!);
-										await sendReceipt(jid, undefined, [msg.key.id!], 'hist_sync');
+								if (category === 'peer') {
+									type = 'peer_msg';
+								} else if (msg.key.fromMe) {
+									type = 'sender';
+									if (isJidUser(msg.key.remoteJid!)) {
+										participant = author;
 									}
-									await sendRetryRequest(node, !encNode);
-
-									if (retryRequestDelayMs) {
-										await delay(retryRequestDelayMs);
-									}
+								} else if (!sendActiveReceipts) {
+									type = 'inactive';
 								}
+
+						try {
+							await decrypt();
+
+							// Verifica se a mensagem falhou ao descriptografar
+							if (msg.messageStubType === proto.WebMessageInfo.StubType.CIPHERTEXT) {
+								await retryMutex.mutex(
+									async () => {
+										if (ws.isOpen) {
+											await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);
+
+								// Verifica se é uma mensagem de histórico
+											const isAnyHistoryMsg = getHistoryMsg(msg.message!);
+											if (isAnyHistoryMsg) {
+												const jid = jidNormalizedUser(msg.key.remoteJid!);
+												await sendReceipt(jid, undefined, [msg.key.id!], 'hist_sync');
+											}
+											const encNode = getBinaryNodeChild(node, 'enc');
+											await sendRetryRequest(node, !encNode);
+											if (retryRequestDelayMs) {
+												await delay(retryRequestDelayMs);
+											}
+										} else {
+											logger.debug({ node }, 'connection closed, ignoring retry req');
+										}
+									}
+								);
 							} else {
-								logger.debug({ node }, 'connection closed, ignoring retry req');
+								// Mensagem entregue com sucesso
+								
+
+								// Envia recibo da mensagem
+								await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);
+
+								// Verifica se é uma mensagem de histórico
+								const isAnyHistoryMsg = getHistoryMsg(msg.message!);
+								if (isAnyHistoryMsg) {
+									const jid = jidNormalizedUser(msg.key.remoteJid!);
+									await sendReceipt(jid, undefined, [msg.key.id!], 'hist_sync');
+								}
 							}
-						});
-					} else {
-						// Mensagem entregue com sucesso
-							 let type = undefined;
-                        	let participant = msg.key.participant;
-                        
 
-						if (category === 'peer') {
-							// Mensagem especial de peer
-							type = 'peer_msg';
-						} else if (msg.key.fromMe) {
-							// Mensagem enviada por nós de outro dispositivo
-							type = 'sender';
-							// Caso especial para manuseio
-							if (isJidUser(msg.key.remoteJid!)) {
-								participant = author;
-							}
-						} else if (!sendActiveReceipts) {
-							type = 'inactive';
-						}
-
-						// Envia recibo da mensagem
-						await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);
-
-						// Verifica se é uma mensagem de histórico
-						const isAnyHistoryMsg = getHistoryMsg(msg.message!);
-						if (isAnyHistoryMsg) {
-							const jid = jidNormalizedUser(msg.key.remoteJid!);
-							await sendReceipt(jid, undefined, [msg.key.id!], 'hist_sync');
+							// Limpa a mensagem
+							cleanMessage(msg, authState.creds.me!.id);
+						} catch (error) {
+							// Log do erro durante o processamento
+							logger.error({ error }, 'Error during message processing');
+						} finally {
+							// Garante que upsertMessage sempre seja chamado, mesmo em caso de erro
+							await upsertMessage(msg, node.attrs.offline ? 'append' : 'notify');
 						}
 					}
+				),
 
-					// Limpa a mensagem
-					cleanMessage(msg, authState.creds.me!.id);
-				} catch (error) {
-					logger.error({ error }, 'Erro ao decriptar a mensagem, fazendo nova tentativa..');
-				} finally {
-					// Garante que upsertMessage sempre seja chamado
-					await upsertMessage(msg, node.attrs.offline ? 'append' : 'notify');
-				}
-			}),
-
-			// Sempre envia o acknowledgment da mensagem
-			sendMessageAck(node)
-		]).catch((error: Error) => {
-			logger.error({ error }, 'Error in overall processing');
-		});
+				// Sempre envia o acknowledgment da mensagem, independentemente de erros
+				sendMessageAck(node)
+			]).catch((error: Error) => {
+				// Log do erro para a Promise geral
+				logger.error({ error }, 'Error in overall processing');
+			});
 
 	}
 
