@@ -734,6 +734,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 				await retryMutex.mutex(async () => {
 				if (ws.isOpen) {
 					const msgId = node.attrs.id;
+					
 
 					let retryCount = msgRetryCache.get<number>(msgId) || 0;
 					if (retryCount >= maxMsgRetryCount) {
@@ -747,7 +748,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 						const jid = jidNormalizedUser(msg.key.remoteJid!);
 						await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
 					}
-					const encNode = getBinaryNodeChild(node, "enc");
+					
 
 					if (retryRequestDelayMs) {
 						await delay(retryRequestDelayMs);
@@ -755,6 +756,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 					} else {
 					retryCount += 1;
 					msgRetryCache.set(msgId, retryCount);
+					const encNode = getBinaryNodeChild(node, "enc");
 					await sendRetryRequest(node, !encNode);
 					}
 				} else {
