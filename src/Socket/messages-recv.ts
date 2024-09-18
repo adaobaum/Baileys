@@ -134,17 +134,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 	}
 
 	const sendRetryRequest = async(node: BinaryNode, forceIncludeKeys = false) => {
-		const msgId = node.attrs.id
 
-		let retryCount = msgRetryCache.get<number>(msgId) || 0
-		if(retryCount >= maxMsgRetryCount) {
-			logger.debug({ retryCount, msgId }, 'reached retry limit, clearing')
-			msgRetryCache.del(msgId)
-			return
-		}
-
-		retryCount += 1
-		msgRetryCache.set(msgId, retryCount)
 
 		const { account, signedPreKey, signedIdentityKey: identityKey } = authState.creds
 
@@ -717,83 +707,89 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 			}
 		}
 
-					await Promise.all([
-				processingMutex.mutex(
-					async () => {
+		await Promise.all([
+		processingMutex.mutex(async () => {
+			let type: MessageReceiptType | undefined = undefined;
+			let participant = msg.key.participant;
 
-						let type: MessageReceiptType | undefined = undefined;
-								let participant = msg.key.participant;
+			if (category === "peer") {
+			type = "peer_msg";
+			} else if (msg.key.fromMe) {
+			type = "sender";
+			if (isJidUser(msg.key.remoteJid!)) {
+				participant = author;
+			}
+			} else if (!sendActiveReceipts) {
+			type = "inactive";
+			}
 
-								if (category === 'peer') {
-									type = 'peer_msg';
-								} else if (msg.key.fromMe) {
-									type = 'sender';
-									if (isJidUser(msg.key.remoteJid!)) {
-										participant = author;
-									}
-								} else if (!sendActiveReceipts) {
-									type = 'inactive';
-								}
+			try {
+			await decrypt();
 
-						try {
-							await decrypt();
+			// Verifica se a mensagem falhou ao descriptografar
+			if (msg.messageStubType === proto.WebMessageInfo.StubType.CIPHERTEXT) {
+				await retryMutex.mutex(async () => {
+				if (ws.isOpen) {
+					const msgId = node.attrs.id;
 
-							// Verifica se a mensagem falhou ao descriptografar
-							if (msg.messageStubType === proto.WebMessageInfo.StubType.CIPHERTEXT) {
-								await retryMutex.mutex(
-									async () => {
-										if (ws.isOpen) {
-											await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);
+					let retryCount = msgRetryCache.get<number>(msgId) || 0;
+					if (retryCount >= maxMsgRetryCount) {
+					logger.debug({ retryCount, msgId }, "Limite de recuperação excedido, limpando mensagem");
+					msgRetryCache.del(msgId);
 
-								// Verifica se é uma mensagem de histórico
-											const isAnyHistoryMsg = getHistoryMsg(msg.message!);
-											if (isAnyHistoryMsg) {
-												const jid = jidNormalizedUser(msg.key.remoteJid!);
-												await sendReceipt(jid, undefined, [msg.key.id!], 'hist_sync');
-											}
-											const encNode = getBinaryNodeChild(node, 'enc');
-											await sendRetryRequest(node, !encNode);
-											if (retryRequestDelayMs) {
-												await delay(retryRequestDelayMs);
-											}
-										} else {
-											logger.debug({ node }, 'connection closed, ignoring retry req');
-										}
-									}
-								);
-							} else {
-								// Mensagem entregue com sucesso
-								
-
-								// Envia recibo da mensagem
-								await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);
-
-								// Verifica se é uma mensagem de histórico
-								const isAnyHistoryMsg = getHistoryMsg(msg.message!);
-								if (isAnyHistoryMsg) {
-									const jid = jidNormalizedUser(msg.key.remoteJid!);
-									await sendReceipt(jid, undefined, [msg.key.id!], 'hist_sync');
-								}
-							}
-
-							// Limpa a mensagem
-							cleanMessage(msg, authState.creds.me!.id);
-						} catch (error) {
-							// Log do erro durante o processamento
-							logger.error({ error }, 'Error during message processing');
-						} finally {
-							// Garante que upsertMessage sempre seja chamado, mesmo em caso de erro
-							await upsertMessage(msg, node.attrs.offline ? 'append' : 'notify');
-						}
+					// Verifica se é uma mensagem de histórico
+					await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);
+					const isAnyHistoryMsg = getHistoryMsg(msg.message!);
+					if (isAnyHistoryMsg) {
+						const jid = jidNormalizedUser(msg.key.remoteJid!);
+						await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
 					}
-				),
+					const encNode = getBinaryNodeChild(node, "enc");
 
-				// Sempre envia o acknowledgment da mensagem, independentemente de erros
-				sendMessageAck(node)
-			]).catch((error: Error) => {
-				// Log do erro para a Promise geral
-				logger.error({ error }, 'Error in overall processing');
-			});
+					if (retryRequestDelayMs) {
+						await delay(retryRequestDelayMs);
+					}
+					} else {
+					retryCount += 1;
+					msgRetryCache.set(msgId, retryCount);
+					await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);
+					}
+				} else {
+					logger.debug({ node }, "connection closed, ignoring retry req");
+				}
+				});
+			} else {
+				// Mensagem entregue com sucesso
+				await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);
+
+				// Verifica se é uma mensagem de histórico
+				const isAnyHistoryMsg = getHistoryMsg(msg.message!);
+				if (isAnyHistoryMsg) {
+				const jid = jidNormalizedUser(msg.key.remoteJid!);
+				await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
+				}
+			}
+
+			// Limpa a mensagem
+			cleanMessage(msg, authState.creds.me!.id);
+			} catch (error) {
+			// Log do erro durante o processamento
+			logger.error({ error }, "Error during message processing");
+			} finally {
+			// Garante que upsertMessage sempre seja chamado, mesmo em caso de erro
+			await upsertMessage(msg, node.attrs.offline ? "append" : "notify");
+			}
+		}),
+
+		// Sempre envia o acknowledgment da mensagem, independentemente de erros
+		sendMessageAck(node)
+		]).catch((error: Error) => {
+		// Log do erro para a Promise geral
+		logger.error({ error }, "Error in overall processing");
+		});
+
+
+				
 
 	}
 
