@@ -134,8 +134,10 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 	}
 
 	const sendRetryRequest = async(node: BinaryNode, forceIncludeKeys = false) => {
+		const msgId = node.attrs.id
 
-
+		let retryCount = msgRetryCache.get<number>(msgId) || 0
+		
 		const { account, signedPreKey, signedIdentityKey: identityKey } = authState.creds
 
 		const deviceIdentity = encodeSignedDeviceIdentity(account!, true)
@@ -707,6 +709,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 			}
 		}
 
+	
 		await Promise.all([
 		processingMutex.mutex(async () => {
 			let type: MessageReceiptType | undefined = undefined;
@@ -752,7 +755,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 					} else {
 					retryCount += 1;
 					msgRetryCache.set(msgId, retryCount);
-					await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);
+					await sendRetryRequest(node, !encNode);
 					}
 				} else {
 					logger.debug({ node }, "connection closed, ignoring retry req");
@@ -788,8 +791,6 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		logger.error({ error }, "Error in overall processing");
 		});
 
-
-				
 
 	}
 
