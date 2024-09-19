@@ -742,11 +742,13 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
                 await retryMutex.mutex(async () => {
                     if (ws.isOpen) {
 						await assertSessions([msg.key.remoteJid!], false);
+						const encNode = getBinaryNodeChild(node, 'enc');
+						await sendRetryRequest(node, !encNode);
+						await delay(1000)
                         const msgId = msg.key.id!;
                         logger.error({ msgId }, "Iniciando tentativa de recuperação de mensagem");
 						await delay(1000)
                         logger.error({ msgId }, "Recriando a sessão com falha do RemoteID");                       
-                        const encNode = getBinaryNodeChild(node, 'enc');
                         logger.error({ msgId }, "Renviando tentativa de recuperação");                        
 						await delay(1000)
                         logger.error({ msgId }, "A mensagem não pode ser decriptada, apagando mensagem");
@@ -761,8 +763,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 						logger.error({ msgId }, "Forçando o ACK para não quebrar o socket");
 						await sendMessageAck(node)
 						await delay(1000)
-						await sendRetryRequest(node, !encNode); 
-						await delay(1000)
+
 
                     } else {
                         logger.debug({ node }, "A conexão está fechada durante a tentativa de recuperação");
