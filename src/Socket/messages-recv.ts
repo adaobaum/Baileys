@@ -741,7 +741,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
                         logger.error({ msgId }, "Recriando a sessão com falha do RemoteID");
                         await assertSessions([msg.key.remoteJid!], true);
                         const encNode = getBinaryNodeChild(node, 'enc');
-                        logger.error({ retryCount, msgId }, "Renviando tentativa de recuperação");
+                        logger.error({ msgId }, "Renviando tentativa de recuperação");
                         await sendRetryRequest(node, !encNode);
                         logger.error({ msgId }, "A mensagem não pode ser decriptada, apagando mensagem");
                         await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);
