@@ -23,7 +23,7 @@ import {
 	xmppPreKey,
 	xmppSignedPreKey
 } from '../Utils'
-import { cleanMessage, processMessage } from '../Utils'
+import { cleanMessage } from '../Utils'
 import { makeMutex } from '../Utils/make-mutex'
 import {
 	areJidsSameUser,
@@ -751,7 +751,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 						const jid = jidNormalizedUser(msg.key.remoteJid!);
 						await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
 					}
-					processMessage(msg);
+					
 					cleanMessage(msg, authState.creds.me!.id);
 					sendMessageAck(node)
 
