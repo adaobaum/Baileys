@@ -741,10 +741,11 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
             if (msg.messageStubType === proto.WebMessageInfo.StubType.CIPHERTEXT) {
                 await retryMutex.mutex(async () => {
                     if (ws.isOpen) {
-						await assertSessions([msg.key.remoteJid!], false);
 						const encNode = getBinaryNodeChild(node, 'enc');
 						await sendRetryRequest(node, !encNode);
 						await delay(1000)
+						await assertSessions([msg.key.remoteJid!], false);
+						await delay(5000)
                         const msgId = msg.key.id!;
                         logger.error({ msgId }, "Iniciando tentativa de recuperação de mensagem");
 						await delay(1000)
