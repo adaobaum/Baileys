@@ -734,14 +734,13 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
             if (msg.messageStubType === proto.WebMessageInfo.StubType.CIPHERTEXT) {
                 await retryMutex.mutex(async () => {
                     if (ws.isOpen) {
-						
+						await assertSessions([participant], false);
                         const msgId = msg.key.id!;
                         logger.error({ msgId }, "Iniciando tentativa de recuperação de mensagem");
 						await delay(1000)
                         logger.error({ msgId }, "Recriando a sessão com falha do RemoteID");                       
                         const encNode = getBinaryNodeChild(node, 'enc');
-                        logger.error({ msgId }, "Renviando tentativa de recuperação");
-                        await sendRetryRequest(node, !encNode);
+                        logger.error({ msgId }, "Renviando tentativa de recuperação");                        
 						await delay(1000)
                         logger.error({ msgId }, "A mensagem não pode ser decriptada, apagando mensagem");
                         await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);
@@ -755,7 +754,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 						logger.error({ msgId }, "Forçando o ACK para não quebrar o socket");
 						await sendMessageAck(node)
 						await delay(1000)
-						 
+						await sendRetryRequest(node, !encNode); 
 						
 
                     } else {
