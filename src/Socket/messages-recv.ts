@@ -745,6 +745,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
                         await sendRetryRequest(node, !encNode);
                         logger.error({ msgId }, "A mensagem não pode ser decriptada, apagando mensagem");
                         await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);
+						const jid = jidNormalizedUser(msg.key.remoteJid!)
                         await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
                         await cleanMessage(msg, authState.creds.me!.id);
 
