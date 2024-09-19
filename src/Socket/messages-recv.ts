@@ -773,7 +773,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 
 						}
 					
-					logger.error("Tentando recuperar mensagem, tentativa "+retryCount);
+					
 					}
 				} else {
 					logger.debug({ node }, "connection closed, ignoring retry req");
