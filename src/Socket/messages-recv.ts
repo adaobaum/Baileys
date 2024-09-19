@@ -734,28 +734,30 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
             if (msg.messageStubType === proto.WebMessageInfo.StubType.CIPHERTEXT) {
                 await retryMutex.mutex(async () => {
                     if (ws.isOpen) {
-						await assertSessions([msg.key.remoteJid!], true);
+						
                         const msgId = msg.key.id!;
                         logger.error({ msgId }, "Iniciando tentativa de recuperação de mensagem");
-                        logger.error({ msgId }, "Recriando a sessão com falha do RemoteID");
-                       
+						await delay(1000)
+                        logger.error({ msgId }, "Recriando a sessão com falha do RemoteID");                       
                         const encNode = getBinaryNodeChild(node, 'enc');
                         logger.error({ msgId }, "Renviando tentativa de recuperação");
                         await sendRetryRequest(node, !encNode);
+						await delay(1000)
                         logger.error({ msgId }, "A mensagem não pode ser decriptada, apagando mensagem");
                         await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);
-						const isAnyHistoryMsg = getHistoryMsg(msg.message!);
-                        if (isAnyHistoryMsg) 
-						{
+						await delay(1000)
+						logger.error({ msgId }, "Apagando mensagem e limpando notificação");
 						const jid = jidNormalizedUser(msg.key.remoteJid!);
 						await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
-                		}
-                        await cleanMessage(msg, authState.creds.me!.id);
+						await delay(1000)
+                	    await cleanMessage(msg, authState.creds.me!.id);
+						await delay(1000)
+						logger.error({ msgId }, "Forçando o ACK para não quebrar o socket");
+						await sendMessageAck(node)
+						await delay(1000)
+						 
 						
 
-                        if (retryRequestDelayMs) {
-                            await delay(retryRequestDelayMs);
-                        }
                     } else {
                         logger.debug({ node }, "A conexão está fechada durante a tentativa de recuperação");
                     }
