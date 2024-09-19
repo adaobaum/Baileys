@@ -23,7 +23,7 @@ import {
 	xmppPreKey,
 	xmppSignedPreKey
 } from '../Utils'
-import { cleanMessage } from '../Utils'
+import { cleanMessage, processMessage } from '../Utils'
 import { makeMutex } from '../Utils/make-mutex'
 import {
 	areJidsSameUser,
@@ -199,7 +199,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 				}
 
 				await sendNode(receipt)
-				await delay(10000);				
+				await delay(5000);				
 				processNodeWithBuffer(node, 'processing message', handleMessage)
 				
 
@@ -737,21 +737,24 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 				await retryMutex.mutex(async () => {
 				if (ws.isOpen) {
 					const msgId = node.attrs.id;
-					
+								
 
 					let retryCount = msgRetryCache.get<number>(msgId) || 0;
 					if (retryCount >= maxMsgRetryCount) {
 					logger.error({ retryCount, msgId }, "Limite de recuperação excedido, limpando mensagem");
 					msgRetryCache.del(msgId);
 
-					// Verifica se é uma mensagem de histórico
+					sendMessageAck(node)
 					await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);
 					const isAnyHistoryMsg = getHistoryMsg(msg.message!);
 					if (isAnyHistoryMsg) {
 						const jid = jidNormalizedUser(msg.key.remoteJid!);
 						await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
 					}
-					
+					processMessage(msg);
+					cleanMessage(msg, authState.creds.me!.id);
+					sendMessageAck(node)
+
 
 					if (retryRequestDelayMs) {
 						await delay(retryRequestDelayMs);
@@ -761,11 +764,20 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 					
 					msgRetryCache.set(msgId, retryCount);
 					const encNode = getBinaryNodeChild(node, "enc");
+					
 					if (retryCount == maxMsgRetryCount) 
 						{
 
-							logger.error("Ultima tentativa de recuperação de mensagem, vamos forçar a recriação das keys, tentativa "+retryCount);	
-							await sendRetryRequest(node, true);
+							logger.error("Ultima tentativa de recuperação de mensagem, tentativa "+retryCount);
+							//await assertSessions([msg.key.remoteJid!])	
+							await sendRetryRequest(node);
+						}
+						else if(retryCount == 1)
+						{
+							logger.error("Primeira tentativa de recuperação de mensage, vamos forçar a recriação das keys.");
+							await assertSessions([msg.key.remoteJid!], true)
+							await sendRetryRequest(node, !encNode);	
+
 						}
 						else
 						{
