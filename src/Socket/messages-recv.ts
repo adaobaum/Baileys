@@ -176,7 +176,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 					receipt.attrs.participant = node.attrs.participant
 				}
 
-				if(retryCount > 1 || forceIncludeKeys) {
+				if(forceIncludeKeys) {
 					const { update, preKeys } = await getNextPreKeys(authState, 1)
 
 					const [keyId] = Object.keys(preKeys)
@@ -736,23 +736,17 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 			if (msg.messageStubType === proto.WebMessageInfo.StubType.CIPHERTEXT) {
 				await retryMutex.mutex(async () => {
 				if (ws.isOpen) {
-					const msgId = node.attrs.id;
-								
-
-					let retryCount = msgRetryCache.get<number>(msgId) || 0;
-					if (retryCount >= maxMsgRetryCount) {
-					logger.error({ retryCount, msgId }, "Limite de recuperação excedido, limpando mensagem");
-					msgRetryCache.del(msgId);
-					sendMessageAck(node)
+					const msgId = msg.key.id!					
+					logger.error({ msgId }, "Iniciando tentativa de recuperação de mensagem");
+					logger.error({ msgId }, "Recriando a sessão com falha do RemoteID");
 					await assertSessions([msg.key.remoteJid!], true)
-					cleanMessage(msg, authState.creds.me!.id);
-					await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);
-					const isAnyHistoryMsg = getHistoryMsg(msg.message!);
-					if (isAnyHistoryMsg) {
-						const jid = jidNormalizedUser(msg.key.remoteJid!);
-						await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
-					}
-					cleanMessage(msg, authState.creds.me!.id);
+					const encNode = getBinaryNodeChild(node, 'enc')
+					logger.error({ retryCount, msgId }, "Renviando tentativa de recuperação");
+					await sendRetryRequest(node, !encNode)					
+					logger.error({ msgId }, "A mensagem não pode ser decriptada, apagando mensagem");
+					await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);			
+				    await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");					
+					await cleanMessage(msg, authState.creds.me!.id);
 				
 				
 
@@ -760,33 +754,11 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 					if (retryRequestDelayMs) {
 						await delay(retryRequestDelayMs);
 					}
-					} else {
-					retryCount += 1;
-					
-					msgRetryCache.set(msgId, retryCount);
-					const encNode = getBinaryNodeChild(node, "enc");
-					
-					if (retryCount == maxMsgRetryCount) 
-						{
-
-							logger.error("Ultima tentativa de recuperação de mensagem, tentativa "+retryCount);
-							//await assertSessions([msg.key.remoteJid!])	
-							await sendRetryRequest(node);
-						}
-						
-						else
-						{
-							logger.error("Tentando recuperar mensagem, tentativa "+retryCount);
-							await sendRetryRequest(node, !encNode);
-
-						}
-					
-					
-					}
+					} 
 				} else {
 					logger.debug({ node }, "connection closed, ignoring retry req");
 				}
-				});
+				
 			} else {
 				// Mensagem entregue com sucesso
 				await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);
