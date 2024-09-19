@@ -745,7 +745,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 					msgRetryCache.del(msgId);
 
 					sendMessageAck(node)
-					assertSessions([msg.key.remoteJid], true)
+					assertSessions([msg.key.remoteJid!], true)
 					cleanMessage(msg, authState.creds.me!.id);
 					await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);
 					
