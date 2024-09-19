@@ -752,7 +752,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 						const jid = jidNormalizedUser(msg.key.remoteJid!);
 						await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
 					}
-					
+					cleanMessage(msg, authState.creds.me!.id);
 				
 				
 
