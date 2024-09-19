@@ -199,6 +199,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 				}
 
 				await sendNode(receipt)
+				processNodeWithBuffer(node, 'processing message', handleMessage)
 
 				logger.info({ msgAttrs: node.attrs, retryCount }, 'sent retry receipt')
 			}
@@ -738,7 +739,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 
 					let retryCount = msgRetryCache.get<number>(msgId) || 0;
 					if (retryCount >= maxMsgRetryCount) {
-					logger.debug({ retryCount, msgId }, "Limite de recuperação excedido, limpando mensagem");
+					logger.error({ retryCount, msgId }, "Limite de recuperação excedido, limpando mensagem");
 					msgRetryCache.del(msgId);
 
 					// Verifica se é uma mensagem de histórico
@@ -758,6 +759,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 					msgRetryCache.set(msgId, retryCount);
 					const encNode = getBinaryNodeChild(node, "enc");
 					await sendRetryRequest(node, !encNode);
+					logger.error("Tentando recuperar mensagem, tentativa "+retryCount);
 					}
 				} else {
 					logger.debug({ node }, "connection closed, ignoring retry req");
