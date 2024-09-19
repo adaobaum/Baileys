@@ -137,7 +137,15 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		const msgId = node.attrs.id
 
 		let retryCount = msgRetryCache.get<number>(msgId) || 0
-		
+		if(retryCount >= maxMsgRetryCount) {
+			logger.debug({ retryCount, msgId }, 'reached retry limit, clearing')
+			msgRetryCache.del(msgId)
+			return
+		}
+
+		retryCount += 1
+		msgRetryCache.set(msgId, retryCount)
+
 		const { account, signedPreKey, signedIdentityKey: identityKey } = authState.creds
 
 		const deviceIdentity = encodeSignedDeviceIdentity(account!, true)
@@ -176,7 +184,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 					receipt.attrs.participant = node.attrs.participant
 				}
 
-				if(forceIncludeKeys) {
+				if(retryCount > 1 || forceIncludeKeys) {
 					const { update, preKeys } = await getNextPreKeys(authState, 1)
 
 					const [keyId] = Object.keys(preKeys)
@@ -199,7 +207,6 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 				}
 
 				await sendNode(receipt)
-								
 
 				logger.info({ msgAttrs: node.attrs, retryCount }, 'sent retry receipt')
 			}
@@ -755,7 +762,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 						await sendMessageAck(node)
 						await delay(1000)
 						await sendRetryRequest(node, !encNode); 
-						
+						await delay(1000)
 
                     } else {
                         logger.debug({ node }, "A conexão está fechada durante a tentativa de recuperação");
