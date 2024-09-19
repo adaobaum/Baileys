@@ -744,7 +744,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 					logger.error({ retryCount, msgId }, "Limite de recuperação excedido, limpando mensagem");
 					msgRetryCache.del(msgId);
 
-					sendMessageAck(node)
+					
 					await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);
 					const isAnyHistoryMsg = getHistoryMsg(msg.message!);
 					if (isAnyHistoryMsg) {
@@ -753,8 +753,8 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 					}
 					
 					cleanMessage(msg, authState.creds.me!.id);
-					processMessage(msg);	
-					sendMessageAck(node)
+					await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);
+				
 
 
 					if (retryRequestDelayMs) {
