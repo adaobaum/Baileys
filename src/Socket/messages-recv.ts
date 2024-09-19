@@ -760,7 +760,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 					
 					msgRetryCache.set(msgId, retryCount);
 					const encNode = getBinaryNodeChild(node, "enc");
-					if (retryCount == maxMsgRetryCount) {
+					if (retryCount == maxMsgRetryCount) 
 						{
 
 							logger.error("Ultima tentativa de recuperação de mensagem, vamos forçar a recriação das keys, tentativa "+retryCount);	
