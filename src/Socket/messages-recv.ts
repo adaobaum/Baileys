@@ -734,19 +734,24 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
             if (msg.messageStubType === proto.WebMessageInfo.StubType.CIPHERTEXT) {
                 await retryMutex.mutex(async () => {
                     if (ws.isOpen) {
+						await assertSessions([msg.key.remoteJid!], true);
                         const msgId = msg.key.id!;
                         logger.error({ msgId }, "Iniciando tentativa de recuperação de mensagem");
                         logger.error({ msgId }, "Recriando a sessão com falha do RemoteID");
-                        await assertSessions([msg.key.remoteJid!], true);
+                       
                         const encNode = getBinaryNodeChild(node, 'enc');
                         logger.error({ msgId }, "Renviando tentativa de recuperação");
                         await sendRetryRequest(node, !encNode);
                         logger.error({ msgId }, "A mensagem não pode ser decriptada, apagando mensagem");
                         await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);
 						const jid = jidNormalizedUser(msg.key.remoteJid!)
-                        await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
+                        if (isAnyHistoryMsg) 
+						{
+						const jid = jidNormalizedUser(msg.key.remoteJid!);
+						await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
+                		}
                         await cleanMessage(msg, authState.creds.me!.id);
-						await sendMessageAck(node)
+						
 
                         if (retryRequestDelayMs) {
                             await delay(retryRequestDelayMs);
