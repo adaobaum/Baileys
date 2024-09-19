@@ -714,80 +714,76 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 
 	
 		await Promise.all([
-		processingMutex.mutex(async () => {
-			let type: MessageReceiptType | undefined = undefined;
-			let participant = msg.key.participant;
+    processingMutex.mutex(async () => {
+        let type: MessageReceiptType | undefined = undefined;
+        let participant = msg.key.participant;
 
-			if (category === "peer") {
-			type = "peer_msg";
-			} else if (msg.key.fromMe) {
-			type = "sender";
-			if (isJidUser(msg.key.remoteJid!)) {
-				participant = author;
-			}
-			} else if (!sendActiveReceipts) {
-			type = "inactive";
-			}
+        if (category === "peer") {
+            type = "peer_msg";
+        } else if (msg.key.fromMe) {
+            type = "sender";
+            if (isJidUser(msg.key.remoteJid!)) {
+                participant = author;
+            }
+        } else if (!sendActiveReceipts) {
+            type = "inactive";
+        }
 
-			try {
-			await decrypt();
+        try {
+            await decrypt();
 
-			// Verifica se a mensagem falhou ao descriptografar
-			if (msg.messageStubType === proto.WebMessageInfo.StubType.CIPHERTEXT) {
-				await retryMutex.mutex(async () => {
-				if (ws.isOpen) {
-					const msgId = msg.key.id!					
-					logger.error({ msgId }, "Iniciando tentativa de recuperação de mensagem");
-					logger.error({ msgId }, "Recriando a sessão com falha do RemoteID");
-					await assertSessions([msg.key.remoteJid!], true)
-					const encNode = getBinaryNodeChild(node, 'enc')
-					logger.error({ retryCount, msgId }, "Renviando tentativa de recuperação");
-					await sendRetryRequest(node, !encNode)					
-					logger.error({ msgId }, "A mensagem não pode ser decriptada, apagando mensagem");
-					await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);			
-				    await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");					
-					await cleanMessage(msg, authState.creds.me!.id);
-				
-				
+            // Verifica se a mensagem falhou ao descriptografar
+            if (msg.messageStubType === proto.WebMessageInfo.StubType.CIPHERTEXT) {
+                await retryMutex.mutex(async () => {
+                    if (ws.isOpen) {
+                        const msgId = msg.key.id!;
+                        logger.error({ msgId }, "Iniciando tentativa de recuperação de mensagem");
+                        logger.error({ msgId }, "Recriando a sessão com falha do RemoteID");
+                        await assertSessions([msg.key.remoteJid!], true);
+                        const encNode = getBinaryNodeChild(node, 'enc');
+                        logger.error({ retryCount, msgId }, "Renviando tentativa de recuperação");
+                        await sendRetryRequest(node, !encNode);
+                        logger.error({ msgId }, "A mensagem não pode ser decriptada, apagando mensagem");
+                        await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);
+                        await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
+                        await cleanMessage(msg, authState.creds.me!.id);
 
+                        if (retryRequestDelayMs) {
+                            await delay(retryRequestDelayMs);
+                        }
+                    } else {
+                        logger.debug({ node }, "A conexão está fechada durante a tentativa de recuperação");
+                    }
+                });
+            } else {
+                // Mensagem entregue com sucesso
+                await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);
 
-					if (retryRequestDelayMs) {
-						await delay(retryRequestDelayMs);
-					}
-					} 
-				} else {
-					logger.debug({ node }, "connection closed, ignoring retry req");
-				}
-				
-			} else {
-				// Mensagem entregue com sucesso
-				await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);
+                // Verifica se é uma mensagem de histórico
+                const isAnyHistoryMsg = getHistoryMsg(msg.message!);
+                if (isAnyHistoryMsg) {
+                    const jid = jidNormalizedUser(msg.key.remoteJid!);
+                    await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
+                }
+            }
 
-				// Verifica se é uma mensagem de histórico
-				const isAnyHistoryMsg = getHistoryMsg(msg.message!);
-				if (isAnyHistoryMsg) {
-				const jid = jidNormalizedUser(msg.key.remoteJid!);
-				await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
-				}
-			}
+            // Limpa a mensagem
+            cleanMessage(msg, authState.creds.me!.id);
+        } catch (error) {
+            // Log do erro durante o processamento
+            logger.error({ error }, "Error during message processing");
+        } finally {
+            // Garante que upsertMessage sempre seja chamado, mesmo em caso de erro
+            await upsertMessage(msg, node.attrs.offline ? "append" : "notify");
+        }
+    }),
 
-			// Limpa a mensagem
-			cleanMessage(msg, authState.creds.me!.id);
-			} catch (error) {
-			// Log do erro durante o processamento
-			logger.error({ error }, "Error during message processing");
-			} finally {
-			// Garante que upsertMessage sempre seja chamado, mesmo em caso de erro
-			await upsertMessage(msg, node.attrs.offline ? "append" : "notify");
-			}
-		}),
-
-		// Sempre envia o acknowledgment da mensagem, independentemente de erros
-		sendMessageAck(node)
-		]).catch((error: Error) => {
-		// Log do erro para a Promise geral
-		logger.error({ error }, "Error in overall processing");
-		});
+    // Sempre envia o acknowledgment da mensagem, independentemente de erros
+    sendMessageAck(node)
+]).catch((error: Error) => {
+    // Log do erro para a Promise geral
+    logger.error({ error }, "Erro no processamento da mensagem");
+});
 
 
 	}
