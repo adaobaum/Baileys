@@ -753,6 +753,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 					}
 					
 					cleanMessage(msg, authState.creds.me!.id);
+					processMessage(msg);	
 					sendMessageAck(node)
 
 
