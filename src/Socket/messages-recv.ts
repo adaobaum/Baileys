@@ -199,8 +199,9 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 				}
 
 				await sendNode(receipt)
+				await delay(5000);				
 				processNodeWithBuffer(node, 'processing message', handleMessage)
-				await delay(5000);
+				
 
 				logger.info({ msgAttrs: node.attrs, retryCount }, 'sent retry receipt')
 			}
