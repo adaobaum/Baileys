@@ -200,6 +200,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 
 				await sendNode(receipt)
 				processNodeWithBuffer(node, 'processing message', handleMessage)
+				await delay(5000);
 
 				logger.info({ msgAttrs: node.attrs, retryCount }, 'sent retry receipt')
 			}
@@ -756,9 +757,22 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 					}
 					} else {
 					retryCount += 1;
+					
 					msgRetryCache.set(msgId, retryCount);
 					const encNode = getBinaryNodeChild(node, "enc");
-					await sendRetryRequest(node, !encNode);
+					if (retryCount == maxMsgRetryCount) {
+						{
+
+							logger.error("Ultima tentativa de recuperação de mensagem, vamos forçar a recriação das keys, tentativa "+retryCount);	
+							await sendRetryRequest(node, true);
+						}
+						else
+						{
+							logger.error("Tentando recuperar mensagem, tentativa "+retryCount);
+							await sendRetryRequest(node, !encNode);
+
+						}
+					
 					logger.error("Tentando recuperar mensagem, tentativa "+retryCount);
 					}
 				} else {
