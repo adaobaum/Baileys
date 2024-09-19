@@ -199,7 +199,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 				}
 
 				await sendNode(receipt)
-				await delay(5000);				
+				await delay(10000);				
 				processNodeWithBuffer(node, 'processing message', handleMessage)
 				
 
