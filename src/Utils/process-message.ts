@@ -148,7 +148,7 @@ export function decryptPollVote(
 	}
 }
 
-const processMessage = async(
+export const processMessage = async(
 	message: proto.IWebMessageInfo,
 	{
 		shouldProcessHistoryMsg,
