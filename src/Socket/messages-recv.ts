@@ -776,7 +776,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 						else if(retryCount == 1)
 						{
 							logger.error("Primeira tentativa de recuperação de mensage, vamos forçar a recriação das keys.");
-							await assertSessions([msg.key.remoteJid!], true)
+							
 							await sendRetryRequest(node, !encNode);	
 
 						}
