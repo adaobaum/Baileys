@@ -23,7 +23,7 @@ import {
 	xmppPreKey,
 	xmppSignedPreKey
 } from '../Utils'
-import { cleanMessage, processMessage } from '../Utils'
+import { cleanMessage } from '../Utils'
 import { makeMutex } from '../Utils/make-mutex'
 import {
 	areJidsSameUser,
@@ -739,22 +739,24 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 					const msgId = node.attrs.id;
 								
 
-					let retryCount = msgRetryCache.get<number>(msgId) || 0;
+					let retryCount = 2;
 					if (retryCount >= maxMsgRetryCount) {
 					logger.error({ retryCount, msgId }, "Limite de recuperação excedido, limpando mensagem");
 					msgRetryCache.del(msgId);
 
-					
+					sendMessageAck(node)
+					assertSessions([msg.key.remoteJid], true)
+					cleanMessage(msg, authState.creds.me!.id);
 					await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);
+					
 					const isAnyHistoryMsg = getHistoryMsg(msg.message!);
 					if (isAnyHistoryMsg) {
 						const jid = jidNormalizedUser(msg.key.remoteJid!);
 						await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
 					}
 					
-					cleanMessage(msg, authState.creds.me!.id);
-					await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);
-				
+					
+					sendMessageAck(node)
 
 
 					if (retryRequestDelayMs) {
@@ -773,13 +775,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 							//await assertSessions([msg.key.remoteJid!])	
 							await sendRetryRequest(node);
 						}
-						else if(retryCount == 1)
-						{
-							logger.error("Primeira tentativa de recuperação de mensage, vamos forçar a recriação das keys.");
-							await assertSessions([msg.key.remoteJid!], true)
-							await sendRetryRequest(node, !encNode);	
-
-						}
+						
 						else
 						{
 							logger.error("Tentando recuperar mensagem, tentativa "+retryCount);
