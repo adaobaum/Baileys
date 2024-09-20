@@ -742,9 +742,8 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
                 await retryMutex.mutex(async () => {
                     if (ws.isOpen) {
 						const encNode = getBinaryNodeChild(node, 'enc');
-						await sendRetryRequest(node, !encNode);
+						await sendRetryRequest(node, !encNode);				
 						
-						await assertSessions([msg.key.remoteJid!], false);
 						await delay(5000)
                         const msgId = msg.key.id!;
                         logger.error({ msgId }, "Iniciando tentativa de recuperação de mensagem");
@@ -767,7 +766,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 
 
                     } else {
-                        logger.debug({ node }, "A conexão está fechada durante a tentativa de recuperação");
+                        logger.error({ node }, "A conexão está fechada durante a tentativa de recuperação");
                     }
                 });
             } else {
@@ -781,12 +780,13 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
                     await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
                 }
             }
+			
 
             // Limpa a mensagem
             cleanMessage(msg, authState.creds.me!.id);
         } catch (error) {
             // Log do erro durante o processamento
-            logger.error({ error }, "Error during message processing");
+            logger.error({ error }, "Erro durante o processamento de uma mensagem");
         } finally {
             // Garante que upsertMessage sempre seja chamado, mesmo em caso de erro
             await upsertMessage(msg, node.attrs.offline ? "append" : "notify");
@@ -798,6 +798,8 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 ]).catch((error: Error) => {
     // Log do erro para a Promise geral
     logger.error({ error }, "Erro no processamento da mensagem");
+	const encNode = getBinaryNodeChild(node, 'enc');
+	await sendRetryRequest(node, !encNode);
 });
 		}
 		else {
