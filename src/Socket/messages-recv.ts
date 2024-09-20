@@ -748,8 +748,8 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 						let retryCount = msgRetryCache.get<number>(msgId) || 0
 						if(retryCount >= maxMsgRetryCount) {
 							logger.error({ retryCount, msgId }, 'Limite de tentativas exedidos, vamos forçar o ACK da mensagem')
-							 await sendReceipt(jid!, participant!, [msg.key.id!], node.attrs.type!);
-							 await sendReceipt(jid, undefined, [msg.key.id!], node.attrs.type!);
+							 await sendReceipt(jid!, participant!, [msg.key.id!]);
+							 await sendReceipt(jid, undefined, [msg.key.id!]);
 							 cleanMessage(msg, authState.creds.me!.id);
 							 msgRetryCache.del(msgId)
 							
@@ -803,8 +803,8 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 						let retryCount = msgRetryCache.get<number>(msgId) || 0
 						if(retryCount >= maxMsgRetryCount) {
 							logger.error({ retryCount, msgId }, 'Limite de tentativas exedidos, vamos forçar o ACK da mensagem')
-							 await sendReceipt(jid!, participant!, [msg.key.id!], node.attrs.type!);
-							 await sendReceipt(jid, undefined, [msg.key.id!], node.attrs.type!);
+							 await sendReceipt(jid!, participant!, [msg.key.id!]);
+							 await sendReceipt(jid, undefined, [msg.key.id!]);
 							 cleanMessage(msg, authState.creds.me!.id);
 							 msgRetryCache.del(msgId)
 							 return
@@ -817,8 +817,8 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 						if(retryCount>1)
 						{   
 							logger.error({ retryCount, msgId }, 'Tentamos recuperar a mensagem, ela não pode ser reuperada, precisamos apagar para não quebrar o socket.')
-							 await sendReceipt(jid!, participant!, [msg.key.id!], type);
-							 await sendReceipt(jid!, undefined, [msg.key.id!], type);
+							 await sendReceipt(jid!, participant!, [msg.key.id!]);
+							 await sendReceipt(jid!, undefined, [msg.key.id!]);
 							 cleanMessage(msg, authState.creds.me!.id);
 							 msgRetryCache.del(msgId)
 							 await delay(1000);
