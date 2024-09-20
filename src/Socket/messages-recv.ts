@@ -800,14 +800,23 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
     logger.error({ error }, "Erro no processamento da mensagem");
 });
 		}
-		else
-		{
-			logger.error({ error }, "Uma mensagem não foi processada enquanto o socket estava aberto, vamos mandar de volta para a fila");
-			const encNode = getBinaryNodeChild(node, 'enc');
-			await sendRetryRequest(node, !encNode);
-			sendMessageAck(node)
+		else {
+    logger.error("Existe mensagens pendentes na fila de processamento, vamos colocar na fila para ser processada, aguardando o socket se reconectar");
 
-		}
+    // Delay inicial de 5 segundos
+    await delay(5000);
+
+    // Loop que verifica se o socket está aberto
+    while (!ws.isOpen) {
+        logger.info("Aguardando reconexão do WebSocket...");
+        await delay(1000); // Verifica a cada 1 segundo se o socket está aberto
+    }
+
+    // Quando o WebSocket estiver conectado, continue com o processamento
+    const encNode = getBinaryNodeChild(node, 'enc');
+    await sendRetryRequest(node, !encNode);
+    sendMessageAck(node);
+}
 
 	}
 
