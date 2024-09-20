@@ -800,6 +800,14 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
     logger.error({ error }, "Erro no processamento da mensagem");
 });
 		}
+		else
+		{
+			logger.error({ error }, "Uma mensagem não foi processada enquanto o socket estava aberto, vamos mandar de volta para a fila");
+			const encNode = getBinaryNodeChild(node, 'enc');
+			await sendRetryRequest(node, !encNode);
+			sendMessageAck(node)
+
+		}
 
 	}
 
