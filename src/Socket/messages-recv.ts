@@ -802,6 +802,16 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 						{
 						retryCount += 1
 						msgRetryCache.set(msgId, retryCount)
+						if(retryCount>1)
+						{   
+							logger.error({ retryCount, msgId }, 'Tentamos recuperar a mensagem, ela não pode ser reuperada, precisamos apagar para não quebrar o socket.')
+							 await sendReceipt(jid!, participant!, [msg.key.id!], type);
+							 await sendReceipt(jid!, undefined, [msg.key.id!], type);
+							 cleanMessage(msg, authState.creds.me!.id);
+							 msgRetryCache.del(msgId)
+							 await delay(1000);
+
+						}
 						processNodeWithBuffer(node, 'processing message', handleMessage)
 						}							
 
