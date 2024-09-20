@@ -743,7 +743,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
                     if (ws.isOpen) {
 						 const msgId = msg.key.id!;
 						 const jid = jidNormalizedUser(msg.key.remoteJid!);
-						  type = "peer_msg";
+						  type = node.attrs.type;
 
 						let retryCount = msgRetryCache.get<number>(msgId) || 0
 						if(retryCount >= maxMsgRetryCount) {
@@ -752,25 +752,24 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 							 await sendReceipt(jid, undefined, [msg.key.id!], type);
 							 cleanMessage(msg, authState.creds.me!.id);
 							 msgRetryCache.del(msgId)
-							return
+							
 						}
 						else
 						{
 						retryCount += 1
 						msgRetryCache.set(msgId, retryCount)
-						if(retryCount>1)
-						{   
-							logger.error({ retryCount, msgId }, 'Tentamos recuperar a mensagem, ela não pode ser reuperada, precisamos apagar para não quebrar o socket.')
+						  
+							logger.error({ retryCount, msgId }, 'Tentamos recuperar a mensagem.')
 							 await sendReceipt(jid!, participant!, [msg.key.id!], type);
 							 await sendReceipt(jid!, undefined, [msg.key.id!], type);
 							 cleanMessage(msg, authState.creds.me!.id);
 							 msgRetryCache.del(msgId)
 							 await delay(1000);
-
-						}
+						
 
 
 						processNodeWithBuffer(node, 'processing message', handleMessage)
+						return
 						}							
 
 
@@ -799,7 +798,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
                     if (ws.isOpen) {
 						 const msgId = msg.key.id!;
 						 const jid = jidNormalizedUser(msg.key.remoteJid!);
-						  type = "peer_msg";
+						  type = node.attrs.type
 
 						let retryCount = msgRetryCache.get<number>(msgId) || 0
 						if(retryCount >= maxMsgRetryCount) {
