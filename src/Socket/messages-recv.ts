@@ -743,16 +743,13 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
                     if (ws.isOpen) {
 						 const msgId = msg.key.id!;
 						 const jid = jidNormalizedUser(msg.key.remoteJid!);
-						 if(!type)
-						 {
-						  type = node.attrs.type!;
-						 }
+						 
 
 						let retryCount = msgRetryCache.get<number>(msgId) || 0
 						if(retryCount >= maxMsgRetryCount) {
 							logger.error({ retryCount, msgId }, 'Limite de tentativas exedidos, vamos forçar o ACK da mensagem')
-							 await sendReceipt(jid!, participant!, [msg.key.id!], type);
-							 await sendReceipt(jid, undefined, [msg.key.id!], type);
+							 await sendReceipt(jid!, participant!, [msg.key.id!], node.attrs.type!);
+							 await sendReceipt(jid, undefined, [msg.key.id!], node.attrs.type!);
 							 cleanMessage(msg, authState.creds.me!.id);
 							 msgRetryCache.del(msgId)
 							
