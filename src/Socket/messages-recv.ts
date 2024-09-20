@@ -798,8 +798,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 ]).catch((error: Error) => {
     // Log do erro para a Promise geral
     logger.error({ error }, "Erro no processamento da mensagem");
-	const encNode = getBinaryNodeChild(node, 'enc');
-	await sendRetryRequest(node, !encNode);
+
 });
 		}
 		else {
