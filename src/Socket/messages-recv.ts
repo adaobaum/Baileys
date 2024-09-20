@@ -717,9 +717,9 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 			}
 		}
 
-		if (ws.isOpen) {
-		await Promise.all([
-    processingMutex.mutex(async () => {
+	
+	await Promise.all([
+     processingMutex.mutex(async () => {
         let type: MessageReceiptType | undefined = undefined;
         let participant = msg.key.participant;
 
@@ -741,28 +741,25 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
             if (msg.messageStubType === proto.WebMessageInfo.StubType.CIPHERTEXT) {
                 await retryMutex.mutex(async () => {
                     if (ws.isOpen) {
-						const encNode = getBinaryNodeChild(node, 'enc');
-						await sendRetryRequest(node, !encNode);				
-						
-						await delay(5000)
-                        const msgId = msg.key.id!;
-                        logger.error({ msgId }, "Iniciando tentativa de recuperação de mensagem");
-						await delay(1000)
-                        logger.error({ msgId }, "Recriando a sessão com falha do RemoteID");                       
-                        logger.error({ msgId }, "Renviando tentativa de recuperação");                        
-						await delay(1000)
-                        logger.error({ msgId }, "A mensagem não pode ser decriptada, apagando mensagem");
-                        await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);
-						await delay(1000)
-						logger.error({ msgId }, "Apagando mensagem e limpando notificação");
-						const jid = jidNormalizedUser(msg.key.remoteJid!);
-						await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
-						await delay(1000)
-                	    await cleanMessage(msg, authState.creds.me!.id);
-						await delay(1000)
-						logger.error({ msgId }, "Forçando o ACK para não quebrar o socket");
-						await sendMessageAck(node)
-						await delay(1000)
+						 const msgId = msg.key.id!;
+						 const jid = jidNormalizedUser(msg.key.remoteJid!);
+						  type = "peer_msg";
+
+						let retryCount = msgRetryCache.get<number>(msgId) || 0
+						if(retryCount >= maxMsgRetryCount) {
+							logger.error({ retryCount, msgId }, 'Limite de tentativas exedidos, vamos forçar o ACK da mensagem')
+							 await sendReceipt(jid!, participant!, [msg.key.id!], type);
+							 await sendReceipt(jid, undefined, [msg.key.id!], type);
+							 cleanMessage(msg, authState.creds.me!.id);
+							 msgRetryCache.del(msgId)
+							return
+						}
+						else
+						{
+						retryCount += 1
+						msgRetryCache.set(msgId, retryCount)
+						processNodeWithBuffer(node, 'processing message', handleMessage)
+						}							
 
 
                     } else {
@@ -785,39 +782,46 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
             // Limpa a mensagem
             cleanMessage(msg, authState.creds.me!.id);
         } catch (error) {
-            // Log do erro durante o processamento
+
+			await retryMutex.mutex(async () => {
+                    if (ws.isOpen) {
+						 const msgId = msg.key.id!;
+						 const jid = jidNormalizedUser(msg.key.remoteJid!);
+						  type = "peer_msg";
+
+						let retryCount = msgRetryCache.get<number>(msgId) || 0
+						if(retryCount >= maxMsgRetryCount) {
+							logger.error({ retryCount, msgId }, 'Limite de tentativas exedidos, vamos forçar o ACK da mensagem')
+							 await sendReceipt(jid!, participant!, [msg.key.id!], type);
+							 await sendReceipt(jid, undefined, [msg.key.id!], type);
+							 cleanMessage(msg, authState.creds.me!.id);
+							 msgRetryCache.del(msgId)
+							return
+						}
+						else
+						{
+						retryCount += 1
+						msgRetryCache.set(msgId, retryCount)
+						processNodeWithBuffer(node, 'processing message', handleMessage)
+						}							
+
+
+                    } else {
+                        logger.error({ node }, "A conexão está fechada durante a tentativa de recuperação");
+                    }
+            
             logger.error({ error }, "Erro durante o processamento de uma mensagem");
         } finally {
             // Garante que upsertMessage sempre seja chamado, mesmo em caso de erro
+			 // Sempre envia o acknowledgment da mensagem, independentemente de erros
+			sendMessageAck(node)
             await upsertMessage(msg, node.attrs.offline ? "append" : "notify");
         }
     }),
 
-    // Sempre envia o acknowledgment da mensagem, independentemente de erros
-    sendMessageAck(node)
-]).catch((error: Error) => {
-    // Log do erro para a Promise geral
-    logger.error({ error }, "Erro no processamento da mensagem");
-
-});
-		}
-		else {
-    logger.error("Existe mensagens pendentes na fila de processamento, vamos colocar na fila para ser processada, aguardando o socket se reconectar");
-
-    // Delay inicial de 5 segundos
-    await delay(5000);
-
-    // Loop que verifica se o socket está aberto
-    while (!ws.isOpen) {
-        logger.info("Aguardando reconexão do WebSocket...");
-        await delay(1000); // Verifica a cada 1 segundo se o socket está aberto
-    }
-
-    // Quando o WebSocket estiver conectado, continue com o processamento
-    const encNode = getBinaryNodeChild(node, 'enc');
-    await sendRetryRequest(node, !encNode);
-    sendMessageAck(node);
-}
+   
+    
+])			
 
 	}
 
