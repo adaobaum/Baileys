@@ -743,7 +743,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
                     if (ws.isOpen) {
 						 const msgId = msg.key.id!;
 						 const jid = jidNormalizedUser(msg.key.remoteJid!);
-						  type = node.attrs.type;
+						  type = node.attrs.type!;
 
 						let retryCount = msgRetryCache.get<number>(msgId) || 0
 						if(retryCount >= maxMsgRetryCount) {
