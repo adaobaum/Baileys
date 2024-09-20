@@ -743,7 +743,10 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
                     if (ws.isOpen) {
 						 const msgId = msg.key.id!;
 						 const jid = jidNormalizedUser(msg.key.remoteJid!);
+						 if(!type)
+						 {
 						  type = node.attrs.type!;
+						 }
 
 						let retryCount = msgRetryCache.get<number>(msgId) || 0
 						if(retryCount >= maxMsgRetryCount) {
@@ -760,9 +763,9 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 						msgRetryCache.set(msgId, retryCount)
 						  
 							logger.error({ retryCount, msgId }, 'Tentamos recuperar a mensagem.')
-							 await sendReceipt(jid!, participant!, [msg.key.id!], type);
-							 await sendReceipt(jid!, undefined, [msg.key.id!], type);
-							 cleanMessage(msg, authState.creds.me!.id);
+							 //await sendReceipt(jid!, participant!, [msg.key.id!], type);
+							// await sendReceipt(jid!, undefined, [msg.key.id!], type);
+							 //cleanMessage(msg, authState.creds.me!.id);
 							 msgRetryCache.del(msgId)
 							 await delay(1000);
 						
