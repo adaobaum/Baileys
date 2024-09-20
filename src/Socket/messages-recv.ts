@@ -809,6 +809,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
                     } else {
                         logger.error({ node }, "A conexão está fechada durante a tentativa de recuperação");
                     }
+			}
             
             logger.error({ error }, "Erro durante o processamento de uma mensagem");
         } finally {
