@@ -743,13 +743,16 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
                     if (ws.isOpen) {
 						 const msgId = msg.key.id!;
 						 const jid = jidNormalizedUser(msg.key.remoteJid!);
-						 
+						 if(!type)
+						 {
+						  type = node.attrs.type as MessageReceiptType;
+						 }
 
 						let retryCount = msgRetryCache.get<number>(msgId) || 0
 						if(retryCount >= maxMsgRetryCount) {
 							logger.error({ retryCount, msgId }, 'Limite de tentativas exedidos, vamos forçar o ACK da mensagem')
-							 await sendReceipt(jid!, participant!, [msg.key.id!]);
-							 await sendReceipt(jid, undefined, [msg.key.id!]);
+							 await sendReceipt(jid!, participant!, [msg.key.id!], type);
+							 await sendReceipt(jid, undefined, [msg.key.id!], type);
 							 cleanMessage(msg, authState.creds.me!.id);
 							 msgRetryCache.del(msgId)
 							
@@ -798,13 +801,13 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
                     if (ws.isOpen) {
 						 const msgId = msg.key.id!;
 						 const jid = jidNormalizedUser(msg.key.remoteJid!);
-						
+						  type = node.attrs.type
 
 						let retryCount = msgRetryCache.get<number>(msgId) || 0
 						if(retryCount >= maxMsgRetryCount) {
 							logger.error({ retryCount, msgId }, 'Limite de tentativas exedidos, vamos forçar o ACK da mensagem')
-							 await sendReceipt(jid!, participant!, [msg.key.id!]);
-							 await sendReceipt(jid, undefined, [msg.key.id!]);
+							 await sendReceipt(jid!, participant!, [msg.key.id!], type);
+							 await sendReceipt(jid, undefined, [msg.key.id!], type);
 							 cleanMessage(msg, authState.creds.me!.id);
 							 msgRetryCache.del(msgId)
 							 return
@@ -817,8 +820,8 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 						if(retryCount>1)
 						{   
 							logger.error({ retryCount, msgId }, 'Tentamos recuperar a mensagem, ela não pode ser reuperada, precisamos apagar para não quebrar o socket.')
-							 await sendReceipt(jid!, participant!, [msg.key.id!]);
-							 await sendReceipt(jid!, undefined, [msg.key.id!]);
+							 await sendReceipt(jid!, participant!, [msg.key.id!], type);
+							 await sendReceipt(jid!, undefined, [msg.key.id!], type);
 							 cleanMessage(msg, authState.creds.me!.id);
 							 msgRetryCache.del(msgId)
 							 await delay(1000);
