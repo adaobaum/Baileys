@@ -790,12 +790,9 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
             }
 			
 
-            // Limpa a mensagem
+            
             cleanMessage(msg, authState.creds.me!.id);
         } catch (error) {
-
-			await retryMutex.mutex(async () => {
-                    if (ws.isOpen) {
                 await retryMutex.mutex(async () => {
                     if (ws.isOpen) {
 						 const msgId = msg.key.id!;
