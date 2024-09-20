@@ -717,7 +717,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 			}
 		}
 
-	
+		if (ws.isOpen) {
 		await Promise.all([
     processingMutex.mutex(async () => {
         let type: MessageReceiptType | undefined = undefined;
@@ -743,7 +743,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
                     if (ws.isOpen) {
 						const encNode = getBinaryNodeChild(node, 'enc');
 						await sendRetryRequest(node, !encNode);
-						await delay(1000)
+						
 						await assertSessions([msg.key.remoteJid!], false);
 						await delay(5000)
                         const msgId = msg.key.id!;
@@ -799,7 +799,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
     // Log do erro para a Promise geral
     logger.error({ error }, "Erro no processamento da mensagem");
 });
-
+		}
 
 	}
 
