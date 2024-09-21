@@ -765,6 +765,10 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 							else if(retryCount==2)
 							{ 
 								type = 'hist_sync';
+								
+								await assertSessions([jid], true)
+								logger.error('Vamos forçar a recriação dessa session')
+								await delay(1200);
 							}
 							else if(retryCount==3)
 							{
@@ -839,6 +843,9 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 							else if(retryCount==2)
 							{ 
 								type = 'hist_sync';
+								await assertSessions([jid], true)
+								logger.error('Vamos forçar a recriação dessa session')
+								await delay(1200);
 							}
 							else if(retryCount==3)
 							{
