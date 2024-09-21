@@ -756,7 +756,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 							 await sendReceipt(jid!, participant!, [msg.key.id!], type);
 							 await sendReceipt(jid, undefined, [msg.key.id!], type);
 							 cleanMessage(msg, authState.creds.me!.id);
-							 await readMessages([msg.key.id!]);
+							 await readMessages([msg.key!]);
 							 msgRetryCache.del(msgId)
 							
 						}
