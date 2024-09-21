@@ -745,7 +745,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 			ev.emit('connection.update', {
 			connection: 'close',
 			lastDisconnect: {
-				error,
+				Error,
 				date: new Date()
 			}
 		})	
