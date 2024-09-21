@@ -677,7 +677,13 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 					}
 				}
 			),
-			sendMessageAck(node)
+			Promise.race([
+            sendMessageAck(node), // Chama a função original
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000)) // 5 segundos de timeout
+        ]).catch(error => {
+            logger.warn({ error }, 'sendMessageAck timed out');
+            // Aqui você pode decidir o que fazer em caso de timeout
+        })
 		])
 	}
 
