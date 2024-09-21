@@ -738,11 +738,14 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
         try {
 			while (!ws.isOpen) {
 			logger.error('Conexão com o socket fechada, aguardando a reconexão para decodificar a mensagem')
+			throw new Boom('Connection Closed', {
+				statusCode: 408
+			})
 			await sendMessageAck(node)
 			ev.emit('connection.update', {
 			connection: 'close',
 			lastDisconnect: {
-				error:{output:{statusCode:408}},
+				error,
 				date: new Date()
 			}
 		})	
