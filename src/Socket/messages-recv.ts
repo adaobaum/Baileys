@@ -735,6 +735,10 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
         }
 
         try {
+			while (!ws.isOpen) {
+			logger.error('Conexão com o socket fechada, aguardando a reconexão para decodificar a mensagem')	
+  			await delay(1000)
+			}
             await decrypt();
 
             // Verifica se a mensagem falhou ao descriptografar
