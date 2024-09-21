@@ -66,6 +66,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		relayMessage,
 		sendReceipt,
 		uploadPreKeys,
+		readMessages
 	} = sock
 
 	/** this mutex ensures that each retryRequest will wait for the previous one to finish */
@@ -755,6 +756,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 							 await sendReceipt(jid!, participant!, [msg.key.id!], type);
 							 await sendReceipt(jid, undefined, [msg.key.id!], type);
 							 cleanMessage(msg, authState.creds.me!.id);
+							 await readMessages([msg.key.id!]);
 							 msgRetryCache.del(msgId)
 							
 						}
