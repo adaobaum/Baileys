@@ -737,7 +737,15 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 
         try {
 			while (!ws.isOpen) {
-			logger.error('Conexão com o socket fechada, aguardando a reconexão para decodificar a mensagem')	
+			logger.error('Conexão com o socket fechada, aguardando a reconexão para decodificar a mensagem')
+			await sendMessageAck(node)
+			ev.emit('connection.update', {
+			connection: 'close',
+			lastDisconnect: {
+				error:{output:{statusCode:408}},
+				date: new Date()
+			}
+		})	
   			await delay(1000)
 			}
             await decrypt();
