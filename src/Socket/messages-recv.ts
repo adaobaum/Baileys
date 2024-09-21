@@ -758,11 +758,31 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 						{
 						retryCount += 1
 						msgRetryCache.set(msgId, retryCount)
+						if(retryCount==1)
+							{
+								type = 'read';
+							}
+							else if(retryCount==2)
+							{ 
+								type = 'hist_sync';
+							}
+							else if(retryCount==3)
+							{
+								type = 'peer_msg';
+							}
+							else if(retryCount==4)
+							{
+								type = 'sender';
+							}
+							else
+							{
+								type = 'inactive';
+							}
 						  
 							logger.error({ retryCount, msgId }, 'Tentamos recuperar a mensagem.')
-							 await sendReceipt(jid!, participant!, [msg.key.id!], type);
+							await sendReceipt(jid!, participant!, [msg.key.id!], type);
 							await sendReceipt(jid!, undefined, [msg.key.id!], type);
-							 cleanMessage(msg, authState.creds.me!.id);
+							cleanMessage(msg, authState.creds.me!.id);
 							 
 							 await delay(1200);
 						
@@ -810,15 +830,35 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 						}
 						else
 						{
-						retryCount += 1
-						msgRetryCache.set(msgId, retryCount)
-						  
-							logger.error({ retryCount, msgId }, 'Tentamos recuperar a mensagem.')
-							 await sendReceipt(jid!, participant!, [msg.key.id!], type);
-							await sendReceipt(jid!, undefined, [msg.key.id!], type);
-							 cleanMessage(msg, authState.creds.me!.id);
+							retryCount += 1
+							msgRetryCache.set(msgId, retryCount)
+							if(retryCount==1)
+							{
+								type = 'read';
+							}
+							else if(retryCount==2)
+							{ 
+								type = 'hist_sync';
+							}
+							else if(retryCount==3)
+							{
+								type = 'peer_msg';
+							}
+							else if(retryCount==4)
+							{
+								type = 'sender';
+							}
+							else
+							{
+								type = 'inactive';
+							}
 							
-							 await delay(1200);
+							logger.error({ retryCount, msgId }, 'Tentamos recuperar a mensagem.')
+							await sendReceipt(jid!, participant!, [msg.key.id!], type);
+							await sendReceipt(jid!, undefined, [msg.key.id!], type);
+							cleanMessage(msg, authState.creds.me!.id);
+								
+							await delay(1200);
 						
 
 
