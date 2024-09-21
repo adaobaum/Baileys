@@ -599,6 +599,23 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 			const items = getBinaryNodeChildren(content[0], 'item')
 			ids.push(...items.map(i => i.attrs.id))
 		}
+		while (!ws.isOpen) {
+			logger.error('Conexão com o socket fechada, aguardando a reconexão para decodificar a mensagem')
+			const error = new Error('Connection closed');
+  			(error as any).output = { statusCode: 408 }; // Adiciona o código 408
+			sendMessageAck(node)
+
+  			// Emite um evento de atualização de conexão com o código de status 408
+			ev.emit('connection.update', {
+				connection: 'close',
+				lastDisconnect: {
+				error: error, // Passa o erro com statusCode
+				date: new Date()
+				}
+			});
+  			await delay(1000)
+			processNodeWithBuffer(node, 'handling receipt', handleReceipt)
+			}
 
 		await Promise.all([
 			processingMutex.mutex(
