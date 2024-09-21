@@ -753,10 +753,13 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 						let retryCount = msgRetryCache.get<number>(msgId) || 0
 						if(retryCount >= maxMsgRetryCount) {
 							logger.error({ retryCount, msgId }, 'Limite de tentativas exedidos, vamos forçar o ACK da mensagem')
-							 await sendReceipt(jid!, participant!, [msg.key.id!], type);
-							 await sendReceipt(jid, undefined, [msg.key.id!], type);
-							 cleanMessage(msg, authState.creds.me!.id);
+							 await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);                
+						   	 const isAnyHistoryMsg = getHistoryMsg(msg.message!);
+							if (isAnyHistoryMsg) {							
+								await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
+							}
 							 await readMessages([msg.key!]);
+							 cleanMessage(msg, authState.creds.me!.id);							
 							 msgRetryCache.del(msgId)
 							
 						}
@@ -770,11 +773,8 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 							}
 							else if(retryCount==2)
 							{ 
-								type = 'hist_sync';
+								type = 'hist_sync';								
 								
-								await assertSessions([jid], true)
-								logger.error('Vamos forçar a recriação dessa session')
-								await delay(1200);
 							}
 							else if(retryCount==3)
 							{
@@ -790,16 +790,20 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 							}
 						  
 							logger.error({ retryCount, msgId }, 'Tentamos recuperar a mensagem.')
-							await sendReceipt(jid!, participant!, [msg.key.id!], type);
-							await sendReceipt(jid!, undefined, [msg.key.id!], type);
+							await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);
+                
+						   const isAnyHistoryMsg = getHistoryMsg(msg.message!);
+							if (isAnyHistoryMsg) {							
+								await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
+							}
 							cleanMessage(msg, authState.creds.me!.id);
 							 
-							 await delay(1200);
+							await delay(1200);
 						
 
 
 						processNodeWithBuffer(node, 'processing message', handleMessage)
-						return
+						
 						}							
 
 
@@ -832,8 +836,12 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 						let retryCount = msgRetryCache.get<number>(msgId) || 0
 						if(retryCount >= maxMsgRetryCount) {
 							logger.error({ retryCount, msgId }, 'Limite de tentativas exedidos, vamos forçar o ACK da mensagem')
-							 await sendReceipt(jid!, participant!, [msg.key.id!], type);
-							 await sendReceipt(jid, undefined, [msg.key.id!], type);
+							 await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);                
+						   	 const isAnyHistoryMsg = getHistoryMsg(msg.message!);
+							if (isAnyHistoryMsg) {							
+								await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
+							}
+							await readMessages([msg.key!]);
 							 cleanMessage(msg, authState.creds.me!.id);
 							 msgRetryCache.del(msgId)
 							
@@ -849,9 +857,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 							else if(retryCount==2)
 							{ 
 								type = 'hist_sync';
-								await assertSessions([jid], true)
-								logger.error('Vamos forçar a recriação dessa session')
-								await delay(1200);
+								
 							}
 							else if(retryCount==3)
 							{
@@ -867,8 +873,11 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 							}
 							
 							logger.error({ retryCount, msgId }, 'Tentamos recuperar a mensagem.')
-							await sendReceipt(jid!, participant!, [msg.key.id!], type);
-							await sendReceipt(jid!, undefined, [msg.key.id!], type);
+							 await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);                
+						   	 const isAnyHistoryMsg = getHistoryMsg(msg.message!);
+							if (isAnyHistoryMsg) {							
+								await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
+							}
 							cleanMessage(msg, authState.creds.me!.id);
 								
 							await delay(1200);
@@ -876,7 +885,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 
 
 						processNodeWithBuffer(node, 'processing message', handleMessage)
-						return
+						
 						}							
 
 
