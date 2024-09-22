@@ -416,8 +416,9 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 							}
 						}
 
-
-
+                         
+						const verify = GroupsCache.get(jid);
+						if (!verify) {
 						 const batchSize = 257; // 257 devices per batch
 						    for (let i = 0; i < senderKeyJids.length; i += batchSize) {
 						        const batch = senderKeyJids.slice(i, i + batchSize);
@@ -425,6 +426,12 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 							    
 							    
 						    }
+							await GroupsCache.set(jid, true);
+						}
+						else
+						{
+							await assertSessions(senderKeyJids, false)
+						}
 
 						const result = await createParticipantNodes(senderKeyJids, senderKeyMsg, mediaType ? { mediatype: mediaType } : undefined)
 						shouldIncludeDeviceIdentity = shouldIncludeDeviceIdentity || result.shouldIncludeDeviceIdentity
