@@ -544,13 +544,13 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		const sendToAll = !jidDecode(participant)?.device
 		
 		//const verify = await assertSessions([participant], config.forceGroupsPrekeys !== undefined ? config.forceGroupsPrekeys : true);
-		const verify = await assertSessions([participant], false);
+		//const verify = await assertSessions([participant], false);
 
-		if (isJidGroup(remoteJid)) {
-		    await authState.keys.set({ 'sender-key-memory': { [remoteJid]: null } });
-		}
+		//if (isJidGroup(remoteJid) || ) {
+		   // await authState.keys.set({ 'sender-key-memory': { [remoteJid]: null } });
+		//}
 		
-		logger.debug({ participant, sendToAll }, 'forced new session for retry recp')
+		//logger.debug({ participant, sendToAll }, 'forced new session for retry recp')
 
 		for(let i = 0; i < msgs.length;i++) {
 			const msg = msgs[i]
