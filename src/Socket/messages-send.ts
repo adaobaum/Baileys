@@ -37,11 +37,10 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 		stdTTL: DEFAULT_CACHE_TTLS.USER_DEVICES, // 5 minutes
 		useClones: false
 	})
-    const GroupsCache = new NodeCache({
-    stdTTL: 86400, // 24 hours in seconds
-    useClones: false
-	});
-
+	const GroupsCache = new NodeCache({
+		stdTTL: 86400, // 24 hours in seconds
+		useClones: false
+		});
 
 	let mediaConn: Promise<MediaConnInfo>
 	const refreshMediaConn = async(forceGet = false) => {
@@ -266,7 +265,6 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 		return didFetchNewSession
 	}
 
-
 	const createParticipantNodes = async(
 		jids: string[],
 		message: proto.IMessage,
@@ -418,44 +416,15 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 							}
 						}
 
-						const verify = GroupsCache.get(destinationJid);
-						if (!verify) {
-						    const batchSize = 257; // 257 devices per batch
+
+
+						 const batchSize = 257; // 257 devices per batch
 						    for (let i = 0; i < senderKeyJids.length; i += batchSize) {
 						        const batch = senderKeyJids.slice(i, i + batchSize);
 						        await assertSessions(batch, false);
-
 							    
 							    
 						    }
-						const participantsList = (groupData && !isStatus) ? groupData.participants.map(p => p.id) : []
-						if(isStatus && statusJidList) {
-							participantsList.push(...statusJidList)
-						}	
-						const retryDevices = await getUSyncDevices(participantsList, !!useUserDevicesCache, false);
-
-						
-						retryDevices.forEach(device => {
-						    if (!devices.includes(device)) {
-						        devices.push(device);
-						    }
-						});
-						
-						   for(const { user, device } of devices) {
-						   const jid = jidEncode(user, isLid ? 'lid' : 's.whatsapp.net', device)
-							if(!senderKeyMap[jid] || !!participant) {
-								 if (!senderKeyJids.includes(jid)) {
-								            senderKeyJids.push(jid);
-									    senderKeyMap[jid] = true;
-        							}
-
-							}
-						     }
-						await GroupsCache.set(destinationJid, true);
-						}	
-						
-						
-						await assertSessions(senderKeyJids, false);
 
 						const result = await createParticipantNodes(senderKeyJids, senderKeyMsg, mediaType ? { mediatype: mediaType } : undefined)
 						shouldIncludeDeviceIdentity = shouldIncludeDeviceIdentity || result.shouldIncludeDeviceIdentity
@@ -683,7 +652,6 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 		...sock,
 		getPrivacyTokens,
 		assertSessions,
-		getUSyncDevices,
 		relayMessage,
 		sendReceipt,
 		sendReceipts,
