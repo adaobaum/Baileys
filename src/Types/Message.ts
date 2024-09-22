@@ -210,6 +210,8 @@ export type MessageRelayOptions = MinimalRelayOptions & {
     useUserDevicesCache?: boolean
     /** jid list of participants for status@broadcast */
     statusJidList?: string[]
+    isretry?: boolean	
+	
 }
 
 export type MiscMessageGenerationOptions = MinimalRelayOptions & {
