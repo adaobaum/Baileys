@@ -306,7 +306,7 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 	const relayMessage = async(
 		jid: string,
 		message: proto.IMessage,
-		{ messageId: msgId, participant, additionalAttributes, useUserDevicesCache, cachedGroupMetadata, statusJidList }: MessageRelayOptions
+		{ messageId: msgId, participant, additionalAttributes, useUserDevicesCache, cachedGroupMetadata, statusJidList, isretry }: MessageRelayOptions
 	) => {
 		const meId = authState.creds.me!.id
 
@@ -417,8 +417,8 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 						}
 
                          
-						const verify = GroupsCache.get(jid);
-						if (!verify) {
+					
+						if (!isretry) {
 						 const batchSize = 257; // 257 devices per batch
 						    for (let i = 0; i < senderKeyJids.length; i += batchSize) {
 						        const batch = senderKeyJids.slice(i, i + batchSize);
@@ -426,7 +426,7 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 							    
 							    
 						    }
-							await GroupsCache.set(jid, true);
+							
 						}
 						else
 						{
