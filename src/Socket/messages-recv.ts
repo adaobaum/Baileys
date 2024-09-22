@@ -617,7 +617,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 			processNodeWithBuffer(node, 'handling receipt', handleReceipt)
 			}
 
-			sendMessageAck(node)
+			
 
 		await Promise.all([
 			processingMutex.mutex(
@@ -681,6 +681,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 			),
 			
 		])
+		sendMessageAck(node)
 	}
 
 	const handleNotification = async(node: BinaryNode) => {
