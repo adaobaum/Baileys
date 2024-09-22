@@ -546,7 +546,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		//const verify = await assertSessions([participant], config.forceGroupsPrekeys !== undefined ? config.forceGroupsPrekeys : true);
 		const verify = await assertSessions([participant], false);
 
-		if (isJidGroup(remoteJid) || verify === true) {
+		if (isJidGroup(remoteJid)) {
 		    await authState.keys.set({ 'sender-key-memory': { [remoteJid]: null } });
 		}
 		
@@ -617,6 +617,8 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 			processNodeWithBuffer(node, 'handling receipt', handleReceipt)
 			}
 
+			sendMessageAck(node)
+
 		await Promise.all([
 			processingMutex.mutex(
 				async() => {
@@ -677,7 +679,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 					}
 				}
 			),
-			sendMessageAck(node)
+			
 		])
 	}
 
