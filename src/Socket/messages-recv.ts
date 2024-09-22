@@ -556,7 +556,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 			const msg = msgs[i]
 			if(msg) {
 				updateSendMessageAgainCount(ids[i], participant)
-				const msgRelayOpts: MessageRelayOptions = { messageId: ids[i] }
+				const msgRelayOpts: MessageRelayOptions = { messageId: ids[i], isretry:true }
 
 				if(sendToAll) {
 					msgRelayOpts.useUserDevicesCache = false
