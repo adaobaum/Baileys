@@ -590,6 +590,15 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 
 		if(shouldIgnoreJid(remoteJid) && remoteJid !== '@s.whatsapp.net') {
 			logger.debug({ remoteJid }, 'ignoring receipt from jid')
+            const msgId = msg.key.id!;
+				const jid = jidNormalizedUser(msg.key.remoteJid!);
+				await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);                
+				const isAnyHistoryMsg = getHistoryMsg(msg.message!);
+				if (isAnyHistoryMsg) 
+				{							
+					await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
+				}
+			cleanMessage(msg, authState.creds.me!.id);
 			await sendMessageAck(node)
 			return
 		}
@@ -772,7 +781,25 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 			});
   			await delay(1000)
 			}
-            await decrypt();
+			
+			const isUppercase = msg.key.id! === msg.key.id!.toUpperCase();
+			if(!isUppercase)
+			{
+				const msgId = msg.key.id!;
+				const jid = jidNormalizedUser(msg.key.remoteJid!);
+				await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);                
+				const isAnyHistoryMsg = getHistoryMsg(msg.message!);
+				if (isAnyHistoryMsg) 
+				{							
+					await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
+				}
+			await readMessages([msg.key!]);
+			cleanMessage(msg, authState.creds.me!.id);	
+           logger.error('Mensagem fora do padrão detectada, não vamos tentar decriptar')
+		   sendMessageAck(node)
+		   return;
+			}
+			 await decrypt();
 
             // Verifica se a mensagem falhou ao descriptografar
             if (msg.messageStubType === proto.WebMessageInfo.StubType.CIPHERTEXT) {
