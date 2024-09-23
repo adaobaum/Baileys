@@ -312,19 +312,7 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 
 
 		while (!ws.isOpen) {
-			logger.error('Conexão com o socket fechada, aguardando a reconexão para decodificar a mensagem')
-			const error = new Error('Connection closed');
-  			(error as any).output = { statusCode: 408 }; // Adiciona o código 408
-		
-
-  			// Emite um evento de atualização de conexão com o código de status 408
-			ev.emit('connection.update', {
-				connection: 'close',
-				lastDisconnect: {
-				error: error, // Passa o erro com statusCode
-				date: new Date()
-				}
-			});
+			logger.error('Conexão com o socket fechada, aguardando a reconexão para decodificar a mensagem')  			
   			await delay(1000)
 			
 			}
