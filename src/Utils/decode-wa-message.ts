@@ -21,12 +21,7 @@ export function decodeMessageNode(
 	let msgType: MessageType
 	let chatId: string
 	let author: string
-	const msgId = stanza.attrs.id
-	const isUppercase = msgId === msgId.toUpperCase();
-	if(!isUppercase)
-	{
-		throw new Boom('Mensagem fora do padrão de criptografia', { data: stanza})
-	} 
+	const msgId = stanza.attrs.id	
 	const from = stanza.attrs.from
 	const participant: string | undefined = stanza.attrs.participant
 	const recipient: string | undefined = stanza.attrs.recipient
