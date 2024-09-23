@@ -830,19 +830,19 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 
 							
 							logger.error('Forçando a a criação de novas keys')
-							await assertSessions([jid],true);
+							if(participant)
+						 {
+							await assertSessions([participant], true);
+
+						 }
+						 else
+						 {
+							await assertSessions([jid], true);
+
+						 }
 							await delay(1500);
 							logger.error('Forçando a reconexão com o socket')
-							const error = new Error('Connection closed');
-							(error as any).output = { statusCode: 408 }; // Adiciona o código 408
-							// Emite um evento de atualização de conexão com o código de status 408
-							ev.emit('connection.update', {
-								connection: 'close',
-								lastDisconnect: {
-								error: error, // Passa o erro com statusCode
-								date: new Date()
-								}
-							});
+							
 							 await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!.toUpperCase()], type);                
 						   	 const isAnyHistoryMsg = getHistoryMsg(msg.message!);
 							if (isAnyHistoryMsg) {							
