@@ -127,10 +127,7 @@ export const decryptMessageNode = (
 ) => {
 	const { fullMessage, author, sender } =  decodeMessageNode(stanza, meId, meLid)
 	return {
-		if(stanza)
-
-
-		
+				
 		fullMessage,
 		category: stanza.attrs.category,
 		author,
