@@ -795,7 +795,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 							}
 							 await readMessages([msg.key!]);
 							 cleanMessage(msg, authState.creds.me!.id);	
-						 						
+						 	ev.flush()					
 							
 							
 						
@@ -852,7 +852,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 							 cleanMessage(msg, authState.creds.me!.id);							
 							 msgRetryCache.del(msgId)
 							
-						
+							ev.flush()
 									
 
 
