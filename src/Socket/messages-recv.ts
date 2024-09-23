@@ -759,12 +759,23 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
                     if (ws.isOpen) {
 						 const msgId = msg.key.id!;
 						 const jid = jidNormalizedUser(msg.key.remoteJid!);
-						  
+						 if(participant)
+						 {
+							await assertSessions([participant], true);
+
+						 }
+						 else
+						 {
+							await assertSessions([jid], true);
+
+						 }
+						
 
 							
 							logger.error('Forçando a a criação de novas keys')
-							await assertSessions([jid],true);
-							await delay(1500);
+							
+							
+							logger.error('Seção recriada')
 							//logger.error('Forçando a reconexão com o socket')
 							//const error = new Error('Connection closed');
 							//(error as any).output = { statusCode: 408 }; // Adiciona o código 408
