@@ -759,32 +759,32 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
                     if (ws.isOpen) {
 						 const msgId = msg.key.id!;
 						 const jid = jidNormalizedUser(msg.key.remoteJid!);
-						  await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!.toUpperCase()], type);                
+						  
+
+							
+							logger.error('Forçando a a criação de novas keys')
+							await assertSessions([jid],true);
+							await delay(1500);
+							//logger.error('Forçando a reconexão com o socket')
+							//const error = new Error('Connection closed');
+							//(error as any).output = { statusCode: 408 }; // Adiciona o código 408
+							// Emite um evento de atualização de conexão com o código de status 408
+							//ev.emit('connection.update', {
+								//connection: 'close',
+								//lastDisconnect: {
+								//error: error, // Passa o erro com statusCode
+								//date: new Date()
+								//}
+							//});
+							//await delay(10000)
+							await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!.toUpperCase()], type);                
 						   	 const isAnyHistoryMsg = getHistoryMsg(msg.message!);
 							if (isAnyHistoryMsg) {							
 								await sendReceipt(jid, undefined, [msg.key.id!.toUpperCase()], "hist_sync");
 							}
 							 await readMessages([msg.key!]);
 							 cleanMessage(msg, authState.creds.me!.id);	
-						 
-
-							
-							logger.error('Forçando a a criação de novas keys')
-							await assertSessions([jid],true);
-							await delay(1500);
-							logger.error('Forçando a reconexão com o socket')
-							const error = new Error('Connection closed');
-							(error as any).output = { statusCode: 408 }; // Adiciona o código 408
-							// Emite um evento de atualização de conexão com o código de status 408
-							ev.emit('connection.update', {
-								connection: 'close',
-								lastDisconnect: {
-								error: error, // Passa o erro com statusCode
-								date: new Date()
-								}
-							});
-							await delay(10000)
-													
+						 						
 							
 							
 						
