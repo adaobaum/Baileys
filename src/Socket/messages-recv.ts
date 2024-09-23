@@ -772,7 +772,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 						 const jid = jidNormalizedUser(msg.key.remoteJid!);
 						 
 
-							logger.error({ retryCount, msgId }, 'Limite de tentativas exedidos, vamos forçar o ACK da mensagem')
+							
 							logger.error('Forçando a a criação de novas keys')
 							await assertSessions([jid],true);
 							await delay(1500);
@@ -826,7 +826,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 						 const jid = jidNormalizedUser(msg.key.remoteJid!);
 						 
 
-							logger.error({ retryCount, msgId }, 'Limite de tentativas exedidos, vamos forçar o ACK da mensagem')
+							
 							logger.error('Forçando a a criação de novas keys')
 							await assertSessions([jid],true);
 							await delay(1500);
