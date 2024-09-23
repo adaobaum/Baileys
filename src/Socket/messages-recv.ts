@@ -869,13 +869,13 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 						let retryCount = msgRetryCache.get<number>(msgId) || 0
 						if(retryCount >= maxMsgRetryCount) {
 							logger.error({ retryCount, msgId }, 'Limite de tentativas exedidos, vamos forçar o ACK da mensagem')
-							 await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);                
+							 await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!.toUpperCase()], type);                
 						   	 const isAnyHistoryMsg = getHistoryMsg(msg.message!);
 							if (isAnyHistoryMsg) {							
-								await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
+								await sendReceipt(jid, undefined, [msg.key.id!.toUpperCase()], "hist_sync");
 							}
-							await readMessages([msg.key!]);
-							 cleanMessage(msg, authState.creds.me!.id);
+							 await readMessages([msg.key!]);
+							 cleanMessage(msg, authState.creds.me!.id);							
 							 msgRetryCache.del(msgId)
 							
 						}
