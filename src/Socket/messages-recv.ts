@@ -747,7 +747,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
         try {
 			while (!ws.isOpen) {
 			logger.error('Conexão com o socket fechada, aguardando a reconexão para decodificar a mensagem')
-			const error = new Error('Connection closed');  			
+					
   			await delay(1000)
 			}			
 			
@@ -776,6 +776,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 								date: new Date()
 								}
 							});
+							await delay(10000)
 							 await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!.toUpperCase()], type);                
 						   	 const isAnyHistoryMsg = getHistoryMsg(msg.message!);
 							if (isAnyHistoryMsg) {							
@@ -783,7 +784,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 							}
 							 await readMessages([msg.key!]);
 							 cleanMessage(msg, authState.creds.me!.id);							
-							 msgRetryCache.del(msgId)
+							
 							
 						
 									
