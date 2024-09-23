@@ -30,7 +30,8 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 		generateMessageTag,
 		sendNode,
 		groupMetadata,
-		groupToggleEphemeral
+		groupToggleEphemeral,
+		ws
 	} = sock
 
 	const userDevicesCache = config.userDevicesCache || new NodeCache({
