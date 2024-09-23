@@ -772,8 +772,6 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 						 const jid = jidNormalizedUser(msg.key.remoteJid!);
 						 
 
-						let retryCount = msgRetryCache.get<number>(msgId) || 0
-						if(retryCount >= maxMsgRetryCount) {
 							logger.error({ retryCount, msgId }, 'Limite de tentativas exedidos, vamos forçar o ACK da mensagem')
 							logger.error('Forçando a a criação de novas keys')
 							await assertSessions([jid],true);
@@ -798,49 +796,8 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 							 cleanMessage(msg, authState.creds.me!.id);							
 							 msgRetryCache.del(msgId)
 							
-						}
-						else
-						{
-						retryCount += 1
-						msgRetryCache.set(msgId, retryCount)
-						if(retryCount==1)
-							{
-								type = 'read';
-							}
-							else if(retryCount==2)
-							{ 
-								type = 'hist_sync';								
-								
-							}
-							else if(retryCount==3)
-							{
-								type = 'peer_msg';
-							}
-							else if(retryCount==4)
-							{
-								type = 'sender';
-							}
-							else
-							{
-								type = 'inactive';
-							}
-						  
-							logger.error({ retryCount, msgId }, 'Tentamos recuperar a mensagem.')
-							await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);
-                
-						   const isAnyHistoryMsg = getHistoryMsg(msg.message!);
-							if (isAnyHistoryMsg) {							
-								await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
-							}
-							cleanMessage(msg, authState.creds.me!.id);
-							 
-							await delay(1200);
 						
-
-
-						processNodeWithBuffer(node, 'processing message', handleMessage)
-						
-						}							
+									
 
 
                     } else {
@@ -864,13 +821,11 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
             cleanMessage(msg, authState.creds.me!.id);
         } catch (error) {
                 await retryMutex.mutex(async () => {
-                    if (ws.isOpen) {
+						if (ws.isOpen) {
 						 const msgId = msg.key.id!;
 						 const jid = jidNormalizedUser(msg.key.remoteJid!);
-					
+						 
 
-						let retryCount = msgRetryCache.get<number>(msgId) || 0
-						if(retryCount >= maxMsgRetryCount) {
 							logger.error({ retryCount, msgId }, 'Limite de tentativas exedidos, vamos forçar o ACK da mensagem')
 							logger.error('Forçando a a criação de novas keys')
 							await assertSessions([jid],true);
@@ -895,48 +850,8 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 							 cleanMessage(msg, authState.creds.me!.id);							
 							 msgRetryCache.del(msgId)
 							
-						}
-						else
-						{
-							retryCount += 1
-							msgRetryCache.set(msgId, retryCount)
-							if(retryCount==1)
-							{
-								type = 'read';
-							}
-							else if(retryCount==2)
-							{ 
-								type = 'hist_sync';
-								
-							}
-							else if(retryCount==3)
-							{
-								type = 'peer_msg';
-							}
-							else if(retryCount==4)
-							{
-								type = 'sender';
-							}
-							else
-							{
-								type = 'inactive';
-							}
-							
-							logger.error({ retryCount, msgId }, 'Tentamos recuperar a mensagem.')
-							 await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);                
-						   	 const isAnyHistoryMsg = getHistoryMsg(msg.message!);
-							if (isAnyHistoryMsg) {							
-								await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
-							}
-							cleanMessage(msg, authState.creds.me!.id);
-								
-							await delay(1200);
 						
-
-
-						processNodeWithBuffer(node, 'processing message', handleMessage)
-						
-						}							
+									
 
 
                     } else {
