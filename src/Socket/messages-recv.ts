@@ -771,24 +771,8 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 				}
 			});
   			await delay(1000)
-			}
+			}			
 			
-			const isUppercase = msg.key.id! === msg.key.id!.toUpperCase();
-			if(!isUppercase)
-			{
-				const msgId = msg.key.id!;
-				const jid = jidNormalizedUser(msg.key.remoteJid!);
-				await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);                
-				const isAnyHistoryMsg = getHistoryMsg(msg.message!);
-				if (isAnyHistoryMsg) 
-				{							
-					await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
-				}
-			await readMessages([msg.key!]);
-			cleanMessage(msg, authState.creds.me!.id);	
-           logger.error('Mensagem fora do padrão detectada, não vamos tentar decriptar')
-		   return;
-			}
 			 await decrypt();
 
             // Verifica se a mensagem falhou ao descriptografar
@@ -802,12 +786,12 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 						let retryCount = msgRetryCache.get<number>(msgId) || 0
 						if(retryCount >= maxMsgRetryCount) {
 							logger.error({ retryCount, msgId }, 'Limite de tentativas exedidos, vamos forçar o ACK da mensagem')
-							 await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);                
+							 await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!.toUpperCase()], type);                
 						   	 const isAnyHistoryMsg = getHistoryMsg(msg.message!);
 							if (isAnyHistoryMsg) {							
-								await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
+								await sendReceipt(jid, undefined, [msg.key.id!.toUpperCase()], "hist_sync");
 							}
-							 await readMessages([msg.key!]);
+							 await readMessages([msg.key!.toUpperCase()]);
 							 cleanMessage(msg, authState.creds.me!.id);							
 							 msgRetryCache.del(msgId)
 							
