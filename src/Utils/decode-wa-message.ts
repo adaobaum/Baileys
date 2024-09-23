@@ -21,8 +21,7 @@ export function decodeMessageNode(
 	let msgType: MessageType
 	let chatId: string
 	let author: string
-
-	const msgId = stanza.attrs.id
+	const msgId = stanza.attrs.id 
 	const from = stanza.attrs.from
 	const participant: string | undefined = stanza.attrs.participant
 	const recipient: string | undefined = stanza.attrs.recipient
@@ -121,8 +120,30 @@ export const decryptMessageNode = (
 	repository: SignalRepository,
 	logger: Logger
 ) => {
-	const { fullMessage, author, sender } = decodeMessageNode(stanza, meId, meLid)
+	const { fullMessage, author, sender } =  decodeMessageNode(stanza, meId, meLid)
+
+	const isUppercase = stanza.attrs.id === stanza.attrs.id.toUpperCase();
+
+if (!isUppercase) {
+    // Modificando fullMessage fora do return
+    fullMessage.messageStubType = 666;
+    fullMessage.messageStubParameters = 'Mensagem fora do padrão';
+
+    // Logando o erro
+    logger.error('Mensagem fora do padrão de criptografia', { data: stanza });
+
+    // Retornando o objeto modificado
+    return {
+        fullMessage
+	}
+
+	}
+
+
+
 	return {
+
+		
 		fullMessage,
 		category: stanza.attrs.category,
 		author,
