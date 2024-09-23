@@ -759,6 +759,13 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
                     if (ws.isOpen) {
 						 const msgId = msg.key.id!;
 						 const jid = jidNormalizedUser(msg.key.remoteJid!);
+						  await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!.toUpperCase()], type);                
+						   	 const isAnyHistoryMsg = getHistoryMsg(msg.message!);
+							if (isAnyHistoryMsg) {							
+								await sendReceipt(jid, undefined, [msg.key.id!.toUpperCase()], "hist_sync");
+							}
+							 await readMessages([msg.key!]);
+							 cleanMessage(msg, authState.creds.me!.id);	
 						 
 
 							
@@ -777,13 +784,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 								}
 							});
 							await delay(10000)
-							 await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!.toUpperCase()], type);                
-						   	 const isAnyHistoryMsg = getHistoryMsg(msg.message!);
-							if (isAnyHistoryMsg) {							
-								await sendReceipt(jid, undefined, [msg.key.id!.toUpperCase()], "hist_sync");
-							}
-							 await readMessages([msg.key!]);
-							 cleanMessage(msg, authState.creds.me!.id);							
+													
 							
 							
 						
