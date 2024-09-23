@@ -791,7 +791,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 							if (isAnyHistoryMsg) {							
 								await sendReceipt(jid, undefined, [msg.key.id!.toUpperCase()], "hist_sync");
 							}
-							 await readMessages([msg.key!.toUpperCase()]);
+							 await readMessages([msg.key!]);
 							 cleanMessage(msg, authState.creds.me!.id);							
 							 msgRetryCache.del(msgId)
 							
