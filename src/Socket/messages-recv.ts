@@ -612,7 +612,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		await Promise.all([
 			processingMutex.mutex(
 				async() => {
-					const status = attrs.type
+					const status = getStatusFromReceiptType(attrs.type)
 					if(
 						typeof status !== 'undefined' &&
 						(
