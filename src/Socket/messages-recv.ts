@@ -613,7 +613,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		await Promise.all([
 			processingMutex.mutex(
 				async() => {
-					const status = getStatusFromReceiptType(attrs.type)
+					const status = attrs.type
 					if(
 						typeof status !== 'undefined' &&
 						(
@@ -623,7 +623,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 							!isNodeFromMe
 						)
 					) {
-						if(isJidGroup(remoteJid) || isJidStatusBroadcast(remoteJid)) {
+						if(isJidStatusBroadcast(remoteJid)) {
 							if(attrs.participant) {
 								const updateKey: keyof MessageUserReceipt = status === proto.WebMessageInfo.Status.DELIVERY_ACK ? 'receiptTimestamp' : 'readTimestamp'
 								ev.emit(
@@ -637,7 +637,21 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 									}))
 								)
 							}
-						} else {
+						}
+						else if (attrs.type === 'participants') {
+						ev.emit(
+							'messages.update',
+							ids.map(id => ({
+								key: { ...key, id },
+								update: { delivered: 'delivered' } 
+							})),
+							{
+								participants: attrs.content 
+							}
+						);
+					}
+						
+						 else {
 							ev.emit(
 								'messages.update',
 								ids.map(id => ({
@@ -647,6 +661,8 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 							)
 						}
 					}
+					
+
 
 					if(attrs.type === 'retry') {
 						// correctly set who is asking for the retry
