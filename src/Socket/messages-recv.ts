@@ -640,15 +640,13 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 						else if (attrs.type === 'participants') {
 							ev.emit(
 								'messages.update',
-								{
-									updates: ids.map(id => ({
-										key: { ...key, id },
-										update: { delivered: 'delivered' }
-									})),
-									participants: attrs.content 
-								}
+								ids.map(id => ({
+									key: { ...key, id },
+									update: { delivered: 'delivered', participants: attrs.content } // Adicionando participants diretamente
+								}))
 							);
 						}
+
 
 						
 						 else {
