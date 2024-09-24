@@ -638,17 +638,18 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 							}
 						}
 						else if (attrs.type === 'participants') {
-						ev.emit(
-							'messages.update',
-							ids.map(id => ({
-								key: { ...key, id },
-								update: { status } 
-							})),
-							{
-								participants: attrs.content 
-							}
-						);
-					}
+							ev.emit(
+								'messages.update',
+								{
+									updates: ids.map(id => ({
+										key: { ...key, id },
+										update: { delivered: 'delivered' }
+									})),
+									participants: attrs.content 
+								}
+							);
+						}
+
 						
 						 else {
 							ev.emit(
