@@ -133,7 +133,7 @@ export const decryptMessageNode = (
 				if(fullMessage.messageStubType === proto.WebMessageInfo.StubType.CIPHERTEXT)
 				{
 					user = meLid!
-					fullMessage.key.id = fullMessage.key.id.toUpperCase();
+					fullMessage.key.id = fullMessage.key.id!.toUpperCase();
 					
 
 				}
