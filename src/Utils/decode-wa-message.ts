@@ -129,18 +129,20 @@ export const decryptMessageNode = (
 		async decrypt() {
 			let decryptables = 0
 			if(Array.isArray(stanza.content)) {
-				 let user: string;
-				if(fullMessage.messageStubType === proto.WebMessageInfo.StubType.CIPHERTEXT)
-				{
-					user = meLid!
-					fullMessage.key.id = fullMessage.key.id!.toUpperCase();
+				 //let user: string;
+				//if(fullMessage.messageStubType === proto.WebMessageInfo.StubType.CIPHERTEXT)
+				//{
+					//user = meLid!
+					//fullMessage.key.id = fullMessage.key.id!.toUpperCase();
 					
 
-				}
-				else
-				{
-				 user = isJidUser(sender) ? sender : author
-				}
+				//}
+				//else
+				//{
+				 //user = isJidUser(sender) ? sender : author
+				//}
+
+				const user = isJidUser(sender) ? sender : author
 
 
 
