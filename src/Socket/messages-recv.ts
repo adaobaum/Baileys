@@ -776,17 +776,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
                     if (ws.isOpen) {
 						 const msgId = msg.key.id!;
 						 const jid = jidNormalizedUser(msg.key.remoteJid!);
-						 if(participant)
-						 {
-							await assertSessions([participant], true);
-
-						 }
-						 else
-						 {
-							await assertSessions([jid], true);
-
-						 }
-						
+												
 
 							
 							logger.error('Forçando a a criação de novas keys')
@@ -805,10 +795,10 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 								//}
 							//});
 							//await delay(10000)
-							await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!.toUpperCase()], type);                
+							await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);                
 						   	 const isAnyHistoryMsg = getHistoryMsg(msg.message!);
 							if (isAnyHistoryMsg) {							
-								await sendReceipt(jid, undefined, [msg.key.id!.toUpperCase()], "hist_sync");
+								await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
 							}
 							 await readMessages([msg.key!]);
 							 cleanMessage(msg, authState.creds.me!.id);	
@@ -847,23 +837,14 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 
 							
 							logger.error('Forçando a a criação de novas keys')
-							if(participant)
-						 {
-							await assertSessions([participant], true);
-
-						 }
-						 else
-						 {
-							await assertSessions([jid], true);
-
-						 }
+							
 							await delay(1500);
 							logger.error('Forçando a reconexão com o socket')
 							
-							 await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!.toUpperCase()], type);                
+							 await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);                
 						   	 const isAnyHistoryMsg = getHistoryMsg(msg.message!);
 							if (isAnyHistoryMsg) {							
-								await sendReceipt(jid, undefined, [msg.key.id!.toUpperCase()], "hist_sync");
+								await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
 							}
 							 await readMessages([msg.key!]);
 							 cleanMessage(msg, authState.creds.me!.id);							
