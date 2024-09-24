@@ -130,9 +130,10 @@ export const decryptMessageNode = (
 			let decryptables = 0
 			if(Array.isArray(stanza.content)) {
 				 let user: string;
-				if(fullMessage.messageStubType == proto.WebMessageInfo.StubType.CIPHERTEXT)
+				if(fullMessage.messageStubType === proto.WebMessageInfo.StubType.CIPHERTEXT)
 				{
 					user = meLid!
+					fullMessage.key.id = fullMessage.key.id.toUpperCase();
 					
 
 				}
