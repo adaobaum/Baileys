@@ -537,7 +537,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 	) => {
 		const msgs = await Promise.all(ids.map(id => getMessage({ ...key, id })))
 		const remoteJid = key.remoteJid!
-		const participant = key.participant || remoteJid
+		const participant = key.participant || '';
 		// if it's the primary jid sending the request
 		// just re-send the message to everyone
 		// prevents the first message decryption failure
