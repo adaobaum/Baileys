@@ -129,7 +129,21 @@ export const decryptMessageNode = (
 		async decrypt() {
 			let decryptables = 0
 			if(Array.isArray(stanza.content)) {
-				
+				 let user: string;
+				if(fullMessage.messageStubType == proto.WebMessageInfo.StubType.CIPHERTEXT)
+				{
+					user = meLid!
+					
+
+				}
+				else
+				{
+				 user = isJidUser(sender) ? sender : author
+				}
+
+
+
+
 
 				for(const { tag, attrs, content } of stanza.content) {
 					if(tag === 'verified_name' && content instanceof Uint8Array) {
@@ -162,7 +176,7 @@ export const decryptMessageNode = (
 							break
 						case 'pkmsg':
 						case 'msg':
-							const user = isJidUser(sender) ? sender : author
+							
 							msgBuffer = await repository.decryptMessage({
 								jid: user,
 								type: e2eType,
