@@ -136,7 +136,7 @@ export const decryptMessageNode = (
 						fullMessage.verifiedBizName = details.verifiedName
 					}
 
-					if(tag !== 'enc' && tag !== 'plaintext') {
+					if(tag !== 'enc' && tag !== 'plaintext' && tag !== 'reporting' ) {
 						continue
 					}
 
