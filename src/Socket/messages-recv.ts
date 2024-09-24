@@ -541,7 +541,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		// if it's the primary jid sending the request
 		// just re-send the message to everyone
 		// prevents the first message decryption failure
-		const sendToAll = !jidDecode(participant)?.device
+		//const sendToAll = !jidDecode(participant)?.device
 		
 		//const verify = await assertSessions([participant], config.forceGroupsPrekeys !== undefined ? config.forceGroupsPrekeys : true);
 		//const verify = await assertSessions([participant], false);
@@ -558,7 +558,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 				updateSendMessageAgainCount(ids[i], participant)
 				const msgRelayOpts: MessageRelayOptions = { messageId: ids[i], isretry:true }
 
-				if(sendToAll) {
+				if(!key.participant) {
 					msgRelayOpts.useUserDevicesCache = false
 				} else {
 					msgRelayOpts.participant = {
