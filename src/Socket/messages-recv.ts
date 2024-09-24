@@ -642,7 +642,8 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 								'messages.update',
 								ids.map(id => ({
 									key: { ...key, id },
-									update: { delivered: 'delivered', participants: attrs.content } // Adicionando participants diretamente
+									//update: { delivered: 'delivered', participants: attrs.content } // Adicionando participants diretamente
+									update: { status }
 								}))
 							);
 						}
