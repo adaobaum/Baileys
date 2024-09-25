@@ -537,7 +537,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 	) => {
 		const msgs = await Promise.all(ids.map(id => getMessage({ ...key, id })))
 		const remoteJid = key.remoteJid!
-		const participant = key.participant || '';
+		const participant = key.participant || remoteJid
 		// if it's the primary jid sending the request
 		// just re-send the message to everyone
 		// prevents the first message decryption failure
@@ -561,6 +561,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 				if(!key.participant) {
 					msgRelayOpts.useUserDevicesCache = false
 				} else {
+					msgRelayOpts.useUserDevicesCache = false
 					msgRelayOpts.participant = {
 						jid: participant,
 						count: +retryNode.attrs.count
@@ -636,20 +637,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 									}))
 								)
 							}
-						}
-						else if (attrs.type === 'participants') {
-							ev.emit(
-								'messages.update',
-								ids.map(id => ({
-									key: { ...key, id },
-									//update: { delivered: 'delivered', participants: attrs.content } // Adicionando participants diretamente
-									update: { status }
-								}))
-							);
-						}
-
-
-						
+						}						
 						 else {
 							ev.emit(
 								'messages.update',
@@ -660,6 +648,17 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 							)
 						}
 					}
+					if (attrs.type === 'participants') {
+							ev.emit(
+								'messages.update',
+								ids.map(id => ({
+									key: { ...key, id },
+									userJid: jidNormalizedUser(attrs.participant),
+									//update: { delivered: 'delivered', participants: attrs.content } // Adicionando participants diretamente
+									update: { status }
+								}))
+							);
+						}
 					
 
 
