@@ -774,14 +774,11 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
                 await retryMutex.mutex(async () => {
                     if (ws.isOpen) {
 						 const msgId = msg.key.id!;
-						 const jid = jidNormalizedUser(msg.key.remoteJid!);
-												
-
-							
-							logger.error('Forçando a a criação de novas keys')
+						 const jid = jidNormalizedUser(msg.key.remoteJid!);				
 							
 							
-							logger.error('Seção recriada')
+							
+							
 							//logger.error('Forçando a reconexão com o socket')
 							//const error = new Error('Connection closed');
 							//(error as any).output = { statusCode: 408 }; // Adiciona o código 408
@@ -831,14 +828,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
                 await retryMutex.mutex(async () => {
 						if (ws.isOpen) {
 						 const msgId = msg.key.id!;
-						 const jid = jidNormalizedUser(msg.key.remoteJid!);
-						 
-
-							
-							logger.error('Forçando a a criação de novas keys')
-							
-							await delay(1500);
-							logger.error('Forçando a reconexão com o socket')
+						 const jid = jidNormalizedUser(msg.key.remoteJid!);						 
 							
 							 await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);                
 						   	 const isAnyHistoryMsg = getHistoryMsg(msg.message!);
