@@ -563,7 +563,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 				} else {
 					msgRelayOpts.useUserDevicesCache = false
 					msgRelayOpts.participant = {
-						jid: participant,
+						jid: key.participant,
 						count: +retryNode.attrs.count
 					}
 				}
