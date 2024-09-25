@@ -796,7 +796,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 							if (isAnyHistoryMsg) {							
 								await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
 							}
-							 await readMessages([msg.key!]);
+							 //await readMessages([msg.key!]);
 							 cleanMessage(msg, authState.creds.me!.id);	
 						 	ev.flush()					
 							
@@ -835,7 +835,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 							if (isAnyHistoryMsg) {							
 								await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
 							}
-							 await readMessages([msg.key!]);
+							 //await readMessages([msg.key!]);
 							 cleanMessage(msg, authState.creds.me!.id);							
 							 msgRetryCache.del(msgId)
 							
