@@ -779,7 +779,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		
 							if (msg.key.id?.toUpperCase() !== msg.key.id) {
 							
-                            node.attrs.offline!=false;
+                            node.attrs.offline!=null;
                         	sendMessageAck(node);
                         	await upsertMessage(msg, node.attrs.offline ? "append" : "notify");			
                         
@@ -831,7 +831,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 						 const jid = jidNormalizedUser(msg.key.remoteJid!);						 
 						if (msg.key.id?.toUpperCase() !== msg.key.id) {
 							
-                            node.attrs.offline!=false;
+                            node.attrs.offline!=null;
                         	sendMessageAck(node);
                         	await upsertMessage(msg, node.attrs.offline ? "append" : "notify");			
                         
