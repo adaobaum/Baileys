@@ -779,14 +779,17 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		
 							if (msg.key.id?.toUpperCase() !== msg.key.id) {
 							
-                            msg.messageStubType =1;
+                            node.attrs.offline=false;
+                        	sendMessageAck(node);
+                        	await upsertMessage(msg, node.attrs.offline ? "append" : "notify");			
+                        
 							await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);
 			                 await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], 'sender');			                                  
 						   	 const isAnyHistoryMsg = getHistoryMsg(msg.message!);
 							if (isAnyHistoryMsg) {							
 								await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
 							}
-							
+							await upsertMessage(msg, node.attrs.offline ? "append" : "notify");		
 							 cleanMessage(msg, authState.creds.me!.id);
 							}
 							else
@@ -808,20 +811,30 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
                 });
             } else {
                 
-				if (msg.key.id?.toUpperCase() !== msg.key.id) {					
-            					
-			                 await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], 'sender');	                                  
-						
+				if (msg.key.id?.toUpperCase() !== msg.key.id) {
 							
+                            node.attrs.offline=false;
+                        	sendMessageAck(node);
+                        	await upsertMessage(msg, node.attrs.offline ? "append" : "notify");			
+                        
+							await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);
+			                 await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], 'sender');			                                  
+						   	 const isAnyHistoryMsg = getHistoryMsg(msg.message!);
+							if (isAnyHistoryMsg) {							
+								await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
 							}
-                await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);
+							await upsertMessage(msg, node.attrs.offline ? "append" : "notify");		
+							 cleanMessage(msg, authState.creds.me!.id);
+							}
+							else
+							{
+								const encNode = getBinaryNodeChild(node, 'enc')
+								await sendRetryRequest(node, !encNode)
 
-                // Verifica se é uma mensagem de histórico
-                const isAnyHistoryMsg = getHistoryMsg(msg.message!);
-                if (isAnyHistoryMsg) {
-                    const jid = jidNormalizedUser(msg.key.remoteJid!);
-                    await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
-                }
+							}	
+               
+
+                
             }
 			
 
