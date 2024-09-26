@@ -777,7 +777,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 						 const jid = jidNormalizedUser(msg.key.remoteJid!);				
 							
 		
-							if (msg.key.id! !== msg.key.id.toUpperCase()) {
+							if (msg.key.id?.toUpperCase() !== msg.key.id) {
 							
                             msg.messageStubType =1;
 							await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);
@@ -808,7 +808,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
                 });
             } else {
                 
-				if (msg.key.id! !== msg.key.id.toUpperCase()) {					
+				if (msg.key.id?.toUpperCase() !== msg.key.id) {					
             					
 			                 await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], 'sender');	                                  
 						
@@ -832,7 +832,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 						if (ws.isOpen) {
 						 const msgId = msg.key.id!;
 						 const jid = jidNormalizedUser(msg.key.remoteJid!);						 
-						if (msg.key.id! !== msg.key.id.toUpperCase()) {
+						if (msg.key.id?.toUpperCase() !== msg.key.id) {
 							
                             msg.messageStubType =1;
 							await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);
