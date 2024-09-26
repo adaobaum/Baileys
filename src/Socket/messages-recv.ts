@@ -779,7 +779,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		
 							if (msg.key.id?.toUpperCase() !== msg.key.id) {
 							
-                            node.attrs.offline=false;
+                            node.attrs.offline!=false;
                         	sendMessageAck(node);
                         	await upsertMessage(msg, node.attrs.offline ? "append" : "notify");			
                         
@@ -811,9 +811,27 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
                 });
             } else {
                 
-				if (msg.key.id?.toUpperCase() !== msg.key.id) {
+				
+                await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);
+
+                // Verifica se é uma mensagem de histórico
+                const isAnyHistoryMsg = getHistoryMsg(msg.message!);
+                if (isAnyHistoryMsg) {
+                    const jid = jidNormalizedUser(msg.key.remoteJid!);
+                    await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
+                }
+				 cleanMessage(msg, authState.creds.me!.id);
+            }	
+
+                       
+        } catch (error) {
+                await retryMutex.mutex(async () => {
+						if (ws.isOpen) {
+						 const msgId = msg.key.id!;
+						 const jid = jidNormalizedUser(msg.key.remoteJid!);						 
+						if (msg.key.id?.toUpperCase() !== msg.key.id) {
 							
-                            node.attrs.offline=false;
+                            node.attrs.offline!=false;
                         	sendMessageAck(node);
                         	await upsertMessage(msg, node.attrs.offline ? "append" : "notify");			
                         
@@ -832,38 +850,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 								await sendRetryRequest(node, !encNode)
 
 							}	
-               
-
-                
-            }
-			
-
-            
-            cleanMessage(msg, authState.creds.me!.id);
-        } catch (error) {
-                await retryMutex.mutex(async () => {
-						if (ws.isOpen) {
-						 const msgId = msg.key.id!;
-						 const jid = jidNormalizedUser(msg.key.remoteJid!);						 
-						if (msg.key.id?.toUpperCase() !== msg.key.id) {
 							
-                            msg.messageStubType =1;
-							await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);
-			                 await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], 'sender');			                                  
-						   	 const isAnyHistoryMsg = getHistoryMsg(msg.message!);
-							if (isAnyHistoryMsg) {							
-								await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
-							}
-							
-							 cleanMessage(msg, authState.creds.me!.id);
-							}
-							else
-							{
-								const encNode = getBinaryNodeChild(node, 'enc')
-								await sendRetryRequest(node, !encNode)
-
-							}	
-							 cleanMessage(msg, authState.creds.me!.id);
 									
 
 
