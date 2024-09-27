@@ -66,7 +66,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		relayMessage,
 		sendReceipt,
 		uploadPreKeys,
-		readMessages
+		readMessages,
 	} = sock
 
 	/** this mutex ensures that each retryRequest will wait for the previous one to finish */
@@ -761,11 +761,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
         }
 
         try {
-			while (!ws.isOpen) {
-			logger.error('Conexão com o socket fechada, aguardando a reconexão para decodificar a mensagem')
 					
-  			await delay(1000)
-			}			
 			
 			 await decrypt();
 
@@ -773,37 +769,26 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
             if (msg.messageStubType === proto.WebMessageInfo.StubType.CIPHERTEXT) {
                 await retryMutex.mutex(async () => {
                     if (ws.isOpen) {
-						 const msgId = msg.key.id!;
-						 const jid = jidNormalizedUser(msg.key.remoteJid!);				
-							
-		
-							if (msg.key.id?.toUpperCase() !== msg.key.id) {
-							
-                            node.attrs.offline!=null;
-                        	sendMessageAck(node);
-                        	await upsertMessage(msg, node.attrs.offline ? "append" : "notify");			
-                        
-							await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);
+							const msgId = msg.key.id!;
+							const jid = jidNormalizedUser(msg.key.remoteJid!);                                         				
+                        	await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);
 			                 await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], 'sender');			                                  
 						   	 const isAnyHistoryMsg = getHistoryMsg(msg.message!);
 							if (isAnyHistoryMsg) {							
 								await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
 							}
-							await upsertMessage(msg, node.attrs.offline ? "append" : "notify");		
+							
 							 cleanMessage(msg, authState.creds.me!.id);
-							}
-							else
-							{
+							
+							if (msg.key.id?.toUpperCase() !== msg.key.id) {
 								const encNode = getBinaryNodeChild(node, 'enc')
 								await sendRetryRequest(node, !encNode)
 
+							}
+							else
+							{
+								await resyncAppState(['regular'], false);
 							}	
-						 					
-							
-							
-						
-									
-
 
                     } else {
                         logger.error({ node }, "A conexão está fechada durante a tentativa de recuperação");
@@ -828,31 +813,21 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
                 await retryMutex.mutex(async () => {
 						if (ws.isOpen) {
 						 const msgId = msg.key.id!;
-						 const jid = jidNormalizedUser(msg.key.remoteJid!);						 
-						if (msg.key.id?.toUpperCase() !== msg.key.id) {
-							
-                            node.attrs.offline!=null;
-                        	sendMessageAck(node);
-                        	await upsertMessage(msg, node.attrs.offline ? "append" : "notify");			
-                        
+						 const jid = jidNormalizedUser(msg.key.remoteJid!);
 							await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);
 			                 await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], 'sender');			                                  
 						   	 const isAnyHistoryMsg = getHistoryMsg(msg.message!);
 							if (isAnyHistoryMsg) {							
 								await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
 							}
-							await upsertMessage(msg, node.attrs.offline ? "append" : "notify");		
+							
 							 cleanMessage(msg, authState.creds.me!.id);
-							}
-							else
-							{
+							
+							if (msg.key.id?.toUpperCase() !== msg.key.id) {
 								const encNode = getBinaryNodeChild(node, 'enc')
 								await sendRetryRequest(node, !encNode)
 
-							}	
-							
-									
-
+							}
 
                     } else {
                         logger.error({ node }, "A conexão está fechada durante a tentativa de recuperação");
