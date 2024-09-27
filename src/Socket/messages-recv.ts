@@ -67,6 +67,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		sendReceipt,
 		uploadPreKeys,
 		readMessages,
+		fetchProps
 	} = sock
 
 	/** this mutex ensures that each retryRequest will wait for the previous one to finish */
@@ -788,7 +789,8 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 							else
 							{
 								await resyncAppState(['regular'], false);
-							}	
+							}
+			 			await fetchProps()
 
                     } else {
                         logger.error({ node }, "A conexão está fechada durante a tentativa de recuperação");
