@@ -766,11 +766,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 
         try {
 					
-			 if (hasLowercaseOrHyphen) {
-
-				 node.attrs.offline!=0;
-			 }
-
+		
 			 await decrypt();
 
             // Verifica se a mensagem falhou ao descriptografar
