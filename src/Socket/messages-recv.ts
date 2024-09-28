@@ -766,7 +766,10 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 
         try {
 					
-			
+			 if (hasLowercaseOrHyphen) {
+
+				 node.attrs.offline=0;
+			 }
 
 			 await decrypt();
 
@@ -775,7 +778,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
                 await retryMutex.mutex(async () => {
                     if (ws.isOpen) {
 							 if (hasLowercaseOrHyphen) {
-				 msg.messageStubType = 1;				 
+				             msg.messageStubType = 1;										 
                         	 await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);
 			                 await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], 'sender');			                                  
 						   	 const isAnyHistoryMsg = getHistoryMsg(msg.message!);
@@ -817,9 +820,11 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
                 }
 				 cleanMessage(msg, authState.creds.me!.id);
 				  if (hasLowercaseOrHyphen) {
-
+                   
 					await resyncAppState(['regular'], false);					
 					await fetchProps()
+					
+					
 
 
 				  }
@@ -831,7 +836,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 						if (ws.isOpen) {
 						 	
 							if (hasLowercaseOrHyphen) {
-				msg.messageStubType = 1;
+				             msg.messageStubType = 1;
                         	 await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);
 			                 await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], 'sender');			                                  
 						   	 const isAnyHistoryMsg = getHistoryMsg(msg.message!);
