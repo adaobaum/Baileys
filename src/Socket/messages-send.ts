@@ -309,17 +309,7 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 		message: proto.IMessage,
 		{ messageId: msgId, participant, additionalAttributes, useUserDevicesCache, cachedGroupMetadata, statusJidList, isretry }: MessageRelayOptions
 	) => {
-
-
-		while (!ws.isOpen) {
-			logger.error('Conexão com o socket fechada, aguardando a reconexão para decodificar a mensagem')  			
-  			await delay(1000)
-			
-			}
-
-
-
-
+		
 		const meId = authState.creds.me!.id
 
 		let shouldIncludeDeviceIdentity = false
