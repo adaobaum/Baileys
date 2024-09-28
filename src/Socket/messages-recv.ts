@@ -768,7 +768,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 					
 			 if (hasLowercaseOrHyphen) {
 
-				 node.attrs.offline=0;
+				 node.attrs.offline!=0;
 			 }
 
 			 await decrypt();
