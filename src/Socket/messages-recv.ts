@@ -760,37 +760,44 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
         } else if (!sendActiveReceipts) {
             type = "inactive";
         }
+		const msgId = msg.key.id!;
+		const jid = jidNormalizedUser(msg.key.remoteJid!);
+		const hasLowercaseOrHyphen = (msgId!.toUpperCase() !== msgId) || msgId!.includes('-'); 
 
         try {
 					
 			
+
 			 await decrypt();
 
             // Verifica se a mensagem falhou ao descriptografar
             if (msg.messageStubType === proto.WebMessageInfo.StubType.CIPHERTEXT) {
                 await retryMutex.mutex(async () => {
                     if (ws.isOpen) {
-							const msgId = msg.key.id!;
-							const jid = jidNormalizedUser(msg.key.remoteJid!);                                         				
-                        	await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);
+							 if (hasLowercaseOrHyphen) {                                       				
+                        	 await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);
 			                 await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], 'sender');			                                  
 						   	 const isAnyHistoryMsg = getHistoryMsg(msg.message!);
 							if (isAnyHistoryMsg) {							
 								await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
-							}
+								}
 							
 							 cleanMessage(msg, authState.creds.me!.id);
 							
-							if (msg.key.id?.toUpperCase() !== msg.key.id) {
-								const encNode = getBinaryNodeChild(node, 'enc')
-								await sendRetryRequest(node, !encNode)
+							
+								await resyncAppState(['regular'], false);
+								await fetchProps()
+							 }
 
-							}
+
+							
 							else
 							{
-								await resyncAppState(['regular'], false);
+								const encNode = getBinaryNodeChild(node, 'enc')
+								await sendRetryRequest(node, !encNode)
+								
 							}
-			 			await fetchProps()
+			 			
 
                     } else {
                         logger.error({ node }, "A conexão está fechada durante a tentativa de recuperação");
@@ -808,29 +815,41 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
                     await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
                 }
 				 cleanMessage(msg, authState.creds.me!.id);
+				  if (hasLowercaseOrHyphen) {
+
+					await resyncAppState(['regular'], false);					
+					await fetchProps()
+
+
+				  }
             }	
 
                        
         } catch (error) {
                 await retryMutex.mutex(async () => {
 						if (ws.isOpen) {
-						 const msgId = msg.key.id!;
-						 const jid = jidNormalizedUser(msg.key.remoteJid!);
-							await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);
+						 	
+							if (hasLowercaseOrHyphen) {                                       				
+                        	 await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);
 			                 await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], 'sender');			                                  
 						   	 const isAnyHistoryMsg = getHistoryMsg(msg.message!);
 							if (isAnyHistoryMsg) {							
 								await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
-							}
+								}
 							
-							 cleanMessage(msg, authState.creds.me!.id);
+							 cleanMessage(msg, authState.creds.me!.id);				
+							 await resyncAppState(['regular'], false);
+							 await fetchProps()
+							 }
+
+
 							
-							if (msg.key.id?.toUpperCase() !== msg.key.id) {
+							else
+							{
 								const encNode = getBinaryNodeChild(node, 'enc')
 								await sendRetryRequest(node, !encNode)
-
+								
 							}
-
                     } else {
                         logger.error({ node }, "A conexão está fechada durante a tentativa de recuperação");
                     }
