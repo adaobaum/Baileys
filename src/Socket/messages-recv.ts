@@ -628,7 +628,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 					}
 					else
 					{
-						status =proto.WebMessageInfo.Status.SERVER_ACK;
+						status =proto.WebMessageInfo.Status.DELIVERY_ACK;
 					}
 					
 					
