@@ -608,51 +608,88 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		await Promise.all([
 			processingMutex.mutex(
 				async() => {
-					const status = getStatusFromReceiptType(attrs.type)
+					let status = undefined;
+					if(attrs.type=='sender')
+					{
+						status =1;
+					}
+					else if(attrs.participant)
+					{
+						status =2;
+					}
+					else if(attrs.type==='read')
+					{
+						status = 4;
+					}
+					else
+					{
+
+						const very = getStatusFromReceiptType(attrs.type)
+						{
+							if(very)
+							{
+								status = very;
+							}
+							else
+							{
+								status =3;
+							}
+						}
+
+					}
+					
 					if(
-						typeof status !== 'undefined' &&
-						(
-							// basically, we only want to know when a message from us has been delivered to/read by the other person
-							// or another device of ours has read some messages
-							status > proto.WebMessageInfo.Status.DELIVERY_ACK ||
-							!isNodeFromMe
-						)
-					) {
-						if(isJidStatusBroadcast(remoteJid)) {
-							if(attrs.participant) {
-								const updateKey: keyof MessageUserReceipt = status === proto.WebMessageInfo.Status.DELIVERY_ACK ? 'receiptTimestamp' : 'readTimestamp'
-								ev.emit(
-									'message-receipt.update',
+							typeof status !== 'undefined' &&
+							(
+								// basically, we only want to know when a message from us has been delivered to/read by the other person
+								// or another device of ours has read some messages
+								status > proto.WebMessageInfo.Status.DELIVERY_ACK ||
+								!isNodeFromMe
+							)
+						) {
+							if(isJidGroup(remoteJid) || isJidStatusBroadcast(remoteJid)) {
+								if(attrs.participant) {
+									const updateKey: keyof MessageUserReceipt = status === proto.WebMessageInfo.Status.DELIVERY_ACK ? 'receiptTimestamp' : 'readTimestamp'
+									ev.emit(
+										'message-receipt.update',
+										ids.map(id => ({
+											key: { ...key, id },
+											receipt: {
+												userJid: jidNormalizedUser(attrs.participant),
+												[updateKey]: +attrs.t
+											}
+										}))
+									)
+									ev.emit(
+									'messages.update',
 									ids.map(id => ({
 										key: { ...key, id },
-										receipt: {
-											userJid: jidNormalizedUser(attrs.participant),
-											[updateKey]: +attrs.t
-										}
+										update: { status }
+									}))
+								)
+								}
+							} else {
+								ev.emit(
+									'messages.update',
+									ids.map(id => ({
+										key: { ...key, id },
+										update: { status }
 									}))
 								)
 							}
-						}						
-						 else {
-							ev.emit(
-								'messages.update',
-								ids.map(id => ({
-									key: { ...key, id },
-									update: { status }
-								}))
-							)
 						}
-					}
+
 					if (attrs.type === 'participants') {
 							ev.emit(
-								'messages.update',
-								ids.map(id => ({
-									key: { ...key, id },
-									userJid: jidNormalizedUser(attrs.participant),
-									//update: { delivered: 'delivered', participants: attrs.content } // Adicionando participants diretamente
-									update: { status }
-								}))
-							);
+										'message-receipt.update',
+										ids.map(id => ({
+											key: { ...key, id },
+											receipt: {
+												userJid: jidNormalizedUser(attrs.participant),
+												[updateKey]: +attrs.t
+											}
+										}))
+									)
 						}
 					
 
