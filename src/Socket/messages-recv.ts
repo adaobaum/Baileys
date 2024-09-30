@@ -817,8 +817,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 				 cleanMessage(msg, authState.creds.me!.id);
 				  if (hasLowercaseOrHyphen) {
                    
-					await resyncAppState(['regular'], false);					
-					await fetchProps()
+				await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], 'sender');
 					
 					
 
