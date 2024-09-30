@@ -669,6 +669,8 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 		refreshMediaConn,
 	    	waUploadToServer,
 		fetchPrivacySettings,
+		createParticipantNodes,
+		getUSyncDevices,
 		updateMediaMessage: async(message: proto.IWebMessageInfo) => {
 			const content = assertMediaContent(message.message)
 			const mediaKey = content.mediaKey!
