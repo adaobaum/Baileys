@@ -608,7 +608,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		await Promise.all([
 			processingMutex.mutex(
 				async() => {
-					let status = undefined;
+					let status: undefined;
 					if(attrs.type=='sender')
 					{
 						status =proto.WebMessageInfo.Status.PENDING;
