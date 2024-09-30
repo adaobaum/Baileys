@@ -601,6 +601,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		if(Array.isArray(content)) {
 			const items = getBinaryNodeChildren(content[0], 'item')
 			ids.push(...items.map(i => i.attrs.id))
+			
 		}	
 
 			
@@ -613,40 +614,26 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 					{
 						status =proto.WebMessageInfo.Status.PENDING;
 					}
-					else if(attrs.participant)
-					{
-						status =proto.WebMessageInfo.Status.SERVER_ACK;
-					}
 					else if(attrs.type==='read')
 					{
 						status = proto.WebMessageInfo.Status.READ;
 					}
+					else if(atrs.type==='played')
+					{
+						status =proto.WebMessageInfo.Status.PLAYED;
+					}
+					else if(atrs.type==='error')
+					{
+						status =proto.WebMessageInfo.Status.ERROR;
+					}
 					else
 					{
-
-						const very = getStatusFromReceiptType(attrs.type)
-						{
-							if(very)
-							{
-								status = very;
-							}
-							else
-							{
-								status =proto.WebMessageInfo.Status.DELIVERY_ACK;
-							}
-						}
-
+						status =proto.WebMessageInfo.Status.SERVER_ACK;
 					}
 					
-					if(
-							typeof status !== 'undefined' &&
-							(
-								// basically, we only want to know when a message from us has been delivered to/read by the other person
-								// or another device of ours has read some messages
-								status > proto.WebMessageInfo.Status.DELIVERY_ACK ||
-								!isNodeFromMe
-							)
-						) {
+					
+					
+					if(typeof status !== 'undefined') {
 							if(isJidGroup(remoteJid) || isJidStatusBroadcast(remoteJid)) {
 								if(attrs.participant) {
 									const updateKey: keyof MessageUserReceipt = status === proto.WebMessageInfo.Status.DELIVERY_ACK ? 'receiptTimestamp' : 'readTimestamp'
