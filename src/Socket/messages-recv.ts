@@ -618,11 +618,11 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 					{
 						status = proto.WebMessageInfo.Status.READ;
 					}
-					else if(atrs.type==='played')
+					else if(attrs.type==='played')
 					{
 						status =proto.WebMessageInfo.Status.PLAYED;
 					}
-					else if(atrs.type==='error')
+					else if(attrs.type==='error')
 					{
 						status =proto.WebMessageInfo.Status.ERROR;
 					}
