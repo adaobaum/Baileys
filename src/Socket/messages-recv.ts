@@ -763,6 +763,10 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		const msgId = msg.key.id!;
 		const jid = jidNormalizedUser(msg.key.remoteJid!);
 		const hasLowercaseOrHyphen = (msgId!.toUpperCase() !== msgId) || msgId!.includes('-'); 
+		if(hasLowercaseOrHyphen)
+		{
+			await fetchProps();
+		}
 
         try {
 					
@@ -780,17 +784,10 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 						   	 const isAnyHistoryMsg = getHistoryMsg(msg.message!);
 							if (isAnyHistoryMsg) {							
 								await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
-								}
-							
+								}							
 							 cleanMessage(msg, authState.creds.me!.id);
 							
-							
-								await resyncAppState(['regular'], false);
-								await fetchProps()
-							 }
-
-
-							
+							 }							
 							else
 							{
 								const encNode = getBinaryNodeChild(node, 'enc')
@@ -803,8 +800,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
                         logger.error({ node }, "A conexão está fechada durante a tentativa de recuperação");
                     }
                 });
-            } else {
-                
+            } else {                
 				
                 await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);
 
@@ -815,14 +811,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
                     await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
                 }
 				 cleanMessage(msg, authState.creds.me!.id);
-				  if (hasLowercaseOrHyphen) {
-                   
-				await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], 'sender');
-					
-					
-
-
-				  }
+				
             }	
 
                        
@@ -839,8 +828,8 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 								await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
 								}
 							
-							 cleanMessage(msg, authState.creds.me!.id);				
-							 await resyncAppState(['regular'], false);
+							 cleanMessage(msg, authState.creds.me!.id);	
+							
 							 await fetchProps()
 							 }
 
@@ -975,6 +964,12 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 	})
 
 	ws.on('CB:receipt', node => {
+		const msgId = node.attrs.id!;
+		const hasLowercaseOrHyphen = (msgId!.toUpperCase() !== msgId) || msgId!.includes('-'); 
+		if(hasLowercaseOrHyphen)
+		{
+			await fetchProps();
+		}
 		processNodeWithBuffer(node, 'handling receipt', handleReceipt)
 	})
 
