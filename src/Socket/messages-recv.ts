@@ -547,7 +547,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		//const verify = await assertSessions([participant], config.forceGroupsPrekeys !== undefined ? config.forceGroupsPrekeys : true);
 		//const verify = await assertSessions([participant], false);
 
-		if (isJidGroup(remoteJid) || ) {
+		if (isJidGroup(remoteJid)) {
 		    await authState.keys.set({ 'sender-key-memory': { [remoteJid]: null } });
 		}
 		
