@@ -542,16 +542,16 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		// if it's the primary jid sending the request
 		// just re-send the message to everyone
 		// prevents the first message decryption failure
-		//const sendToAll = !jidDecode(participant)?.device
+		const sendToAll = !jidDecode(participant)?.device
 		
 		//const verify = await assertSessions([participant], config.forceGroupsPrekeys !== undefined ? config.forceGroupsPrekeys : true);
 		//const verify = await assertSessions([participant], false);
 
-		//if (isJidGroup(remoteJid) || ) {
-		   // await authState.keys.set({ 'sender-key-memory': { [remoteJid]: null } });
-		//}
+		if (isJidGroup(remoteJid) || ) {
+		    await authState.keys.set({ 'sender-key-memory': { [remoteJid]: null } });
+		}
 		
-		//logger.debug({ participant, sendToAll }, 'forced new session for retry recp')
+		logger.debug({ participant, sendToAll }, 'forced new session for retry recp')
 
 		for(let i = 0; i < msgs.length;i++) {
 			const msg = msgs[i]
@@ -610,7 +610,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 			processingMutex.mutex(
 				async() => {
 					let status;
-					if(attrs.type=='sender')
+					if(attrs.type==='sender')
 					{
 						status =proto.WebMessageInfo.Status.PENDING;
 					}
@@ -633,7 +633,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 					
 					
 					
-					if(typeof status !== 'undefined') {
+					if(typeof status !== 'undefined' && !isNodeFromMe) {
 							if(isJidGroup(remoteJid) || isJidStatusBroadcast(remoteJid)) {
 								if(attrs.participant) {
 									const updateKey: keyof MessageUserReceipt = status === proto.WebMessageInfo.Status.DELIVERY_ACK ? 'receiptTimestamp' : 'readTimestamp'
