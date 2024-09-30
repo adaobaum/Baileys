@@ -968,7 +968,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		const hasLowercaseOrHyphen = (msgId!.toUpperCase() !== msgId) || msgId!.includes('-'); 
 		if(hasLowercaseOrHyphen)
 		{
-			await fetchProps();
+			fetchProps();
 		}
 		processNodeWithBuffer(node, 'handling receipt', handleReceipt)
 	})
