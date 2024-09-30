@@ -611,15 +611,15 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 					let status = undefined;
 					if(attrs.type=='sender')
 					{
-						status =1;
+						status =proto.WebMessageInfo.Status.PENDING;
 					}
 					else if(attrs.participant)
 					{
-						status =2;
+						status =proto.WebMessageInfo.Status.SERVER_ACK;
 					}
 					else if(attrs.type==='read')
 					{
-						status = 4;
+						status = proto.WebMessageInfo.Status.READ;
 					}
 					else
 					{
@@ -632,7 +632,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 							}
 							else
 							{
-								status =3;
+								status =proto.WebMessageInfo.Status.DELIVERY_ACK;
 							}
 						}
 
