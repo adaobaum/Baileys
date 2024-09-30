@@ -685,8 +685,8 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 										ids.map(id => ({
 											key: { ...key, id },
 											receipt: {
-												userJid: jidNormalizedUser(attrs.participant),
-												[updateKey]: +attrs.t
+												userJid: jidNormalizedUser(attrs.participant)
+												
 											}
 										}))
 									)
