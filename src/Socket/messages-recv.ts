@@ -585,7 +585,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 
 		const key: proto.IMessageKey = {
 			remoteJid,
-			id: '',
+			id: attrs.id,
 			fromMe,
 			participant: attrs.participant
 		}
@@ -601,13 +601,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		if(Array.isArray(content)) {
 			const items = getBinaryNodeChildren(content[0], 'item')
 			ids.push(...items.map(i => i.attrs.id))
-		}
-		while (!ws.isOpen) {
-			logger.error('Conexão com o socket fechada, aguardando a reconexão para decodificar a mensagem')
-			
-  			await delay(1000)
-			
-			}
+		}	
 
 			
 
