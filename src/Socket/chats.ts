@@ -738,9 +738,14 @@ export const makeChatsSocket = (config: SocketConfig) => {
 
 		let props: { [_: string]: string } = {}
 		if(propsNode) {
+			if(propsNode?.attrs?.hash)
+			{
 			authState.creds.lastPropHash = propsNode?.attrs?.hash
 			ev.emit('creds.update', authState.creds)
 			props = reduceBinaryNodeToDictionary(propsNode, 'prop')
+			}
+
+
 		}
 
 		logger.debug('fetched props')
