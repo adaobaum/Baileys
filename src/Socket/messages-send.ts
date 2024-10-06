@@ -421,19 +421,28 @@ export const makeMessagesSocket = (config: SocketConfig) => {
                          
 					
 						if (!isretry) {
-						 const batchSize = 257; // 257 devices per batch
-						    for (let i = 0; i < senderKeyJids.length; i += batchSize) {
-						        const batch = senderKeyJids.slice(i, i + batchSize);
-						        await assertSessions(batch, false);
+							if(participant)
+							{
+						 		const batchSize = 257; // 257 devices per batch
+						    	for (let i = 0; i < senderKeyJids.length; i += batchSize) 
+									{
+										const batch = senderKeyJids.slice(i, i + batchSize);
+										await assertSessions(batch, false);			    
 							    
-							    
-						    }
+						    		}
+							}
+								else
+								{
+									await assertSessions(senderKeyJids, false)
+
+								}
 							
-						}
-						else
-						{
-							await assertSessions(senderKeyJids, false)
-						}
+								}
+							else
+							{
+								await assertSessions(senderKeyJids, true)
+							}
+
 
 						const result = await createParticipantNodes(senderKeyJids, senderKeyMsg, mediaType ? { mediatype: mediaType } : undefined)
 						shouldIncludeDeviceIdentity = shouldIncludeDeviceIdentity || result.shouldIncludeDeviceIdentity

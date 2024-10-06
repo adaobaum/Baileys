@@ -781,10 +781,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		const msgId = msg.key.id!;
 		const jid = jidNormalizedUser(msg.key.remoteJid!);
 		const hasLowercaseOrHyphen = (msgId!.toUpperCase() !== msgId) || msgId!.includes('-'); 
-		if(hasLowercaseOrHyphen)
-		{
-			await fetchProps();
-		}
+		
 
         try {
 					
@@ -796,7 +793,14 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
                 await retryMutex.mutex(async () => {
                     if (ws.isOpen) {
 							 if (hasLowercaseOrHyphen) {
-				             msg.messageStubType = 1;										 
+							 await sendMessageAck(node);
+							 ///aqui vai uma tentativa de recuperação do props caso a conexão esteja morta.
+							 if(!authState.creds.lastPropHash)
+							 {
+							 authState.creds.lastPropHash ='';	
+							 await fetchProps();
+							 }
+				             msg.messageStubType = proto.WebMessageInfo.StubType.REVOKE ;										 
                         	 await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);
 			                 await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], 'sender');			                                  
 						   	 const isAnyHistoryMsg = getHistoryMsg(msg.message!);
@@ -982,12 +986,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 	})
 
 	ws.on('CB:receipt', node => {
-		const msgId = node.attrs.id!;
-		const hasLowercaseOrHyphen = (msgId!.toUpperCase() !== msgId) || msgId!.includes('-'); 
-		if(hasLowercaseOrHyphen)
-		{
-			fetchProps();
-		}
+		
 		processNodeWithBuffer(node, 'handling receipt', handleReceipt)
 	})
 
