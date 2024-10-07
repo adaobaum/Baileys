@@ -421,21 +421,15 @@ export const makeMessagesSocket = (config: SocketConfig) => {
                          
 					
 						if (!isretry) {
-							if(participant)
-							{
+							
 						 		const batchSize = 257; // 257 devices per batch
 						    	for (let i = 0; i < senderKeyJids.length; i += batchSize) 
 									{
 										const batch = senderKeyJids.slice(i, i + batchSize);
 										await assertSessions(batch, false);			    
 							    
-						    		}
-							}
-								else
-								{
-									await assertSessions(senderKeyJids, false)
-
-								}
+									}					
+								
 							
 								}
 							else
@@ -485,8 +479,8 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 
 						allJids.push(jid)
 					}
-
-					await assertSessions(allJids, false)
+                    /// update que favorece a recuperação da primeira mensagem vinda de anúncios ///
+					await assertSessions(allJids, isretry ? true : false);
 
 					const [
 						{ nodes: meNodes, shouldIncludeDeviceIdentity: s1 },
