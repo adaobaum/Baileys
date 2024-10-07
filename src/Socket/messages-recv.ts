@@ -794,20 +794,12 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
                     if (ws.isOpen) {
 							 if (hasLowercaseOrHyphen) {
 							 await sendMessageAck(node);
-							 ///aqui vai uma tentativa de recuperação do props caso a conexão esteja morta.
-							 if(!authState.creds.lastPropHash)
-							 {
+							 
 							 authState.creds.lastPropHash ='';	
-							 await fetchProps();
-							 }
-				             msg.messageStubType = proto.WebMessageInfo.StubType.REVOKE ;										 
-                        	 await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);
-			                 await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], 'sender');			                                  
-						   	 const isAnyHistoryMsg = getHistoryMsg(msg.message!);
-							if (isAnyHistoryMsg) {							
-								await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
-								}							
-							 cleanMessage(msg, authState.creds.me!.id);
+							 await fetchProps();						 
+				            
+							 return;						 
+							 
 							
 							 }							
 							else
@@ -842,18 +834,11 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 						if (ws.isOpen) {
 						 	
 							if (hasLowercaseOrHyphen) {
-				             msg.messageStubType = 1;
-                        	 await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);
-			                 await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], 'sender');			                                  
-						   	 const isAnyHistoryMsg = getHistoryMsg(msg.message!);
-							if (isAnyHistoryMsg) {							
-								await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
-								}
-							
-							 cleanMessage(msg, authState.creds.me!.id);	
-							
-							 await fetchProps()
-							 }
+								await sendMessageAck(node);						
+								authState.creds.lastPropHash ='';	
+								await fetchProps();
+								return;							
+								}	
 
 
 							
@@ -874,6 +859,11 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 			 // Sempre envia o acknowledgment da mensagem, independentemente de erros
 			sendMessageAck(node)
             await upsertMessage(msg, node.attrs.offline ? "append" : "notify");
+			if (hasLowercaseOrHyphen) {						
+				authState.creds.lastPropHash ='';	
+				await fetchProps();	
+		
+				}	
         }
     }),
 
