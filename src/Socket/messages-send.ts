@@ -9,6 +9,7 @@ import { getUrlInfo } from '../Utils/link-preview'
 import { areJidsSameUser, BinaryNode, BinaryNodeAttributes, getBinaryNodeChild, getBinaryNodeChildren, isJidGroup, isJidUser, jidDecode, jidEncode, jidNormalizedUser, JidWithDevice, S_WHATSAPP_NET } from '../WABinary'
 import { makeGroupsSocket } from './groups'
 import ListType = proto.Message.ListMessage.ListType;
+const PQueue = require('p-queue').default;
 
 export const makeMessagesSocket = (config: SocketConfig) => {
 	const {
@@ -725,77 +726,117 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 
 			return message
 		},
-		sendMessage: async(
+		sendMessage: async (
 			jid: string,
 			content: AnyMessageContent,
-			options: MiscMessageGenerationOptions = { }
+			options: MiscMessageGenerationOptions = {}
 		) => {
-			const userJid = authState.creds.me!.id
-			if(
+			const mediaQueue = new PQueue({ concurrency: 1 });
+			const relayQueue = new PQueue({ concurrency: 1 });
+		
+			const userJid = authState.creds.me!.id;
+			
+			if (
 				typeof content === 'object' &&
 				'disappearingMessagesInChat' in content &&
 				typeof content['disappearingMessagesInChat'] !== 'undefined' &&
 				isJidGroup(jid)
 			) {
-				const { disappearingMessagesInChat } = content
+				const { disappearingMessagesInChat } = content;
 				const value = typeof disappearingMessagesInChat === 'boolean' ?
 					(disappearingMessagesInChat ? WA_DEFAULT_EPHEMERAL : 0) :
-					disappearingMessagesInChat
-				await groupToggleEphemeral(jid, value)
+					disappearingMessagesInChat;
+				await groupToggleEphemeral(jid, value);
 			} else {
-				const fullMsg = await generateWAMessage(
-					jid,
-					content,
-					{
-						logger,
-						userJid,
-						getUrlInfo: text => getUrlInfo(
-							text,
-							{
-								thumbnailWidth: linkPreviewImageThumbnailWidth,
-								fetchOpts: {
-									timeout: 3_000,
-									...axiosOptions || { }
+				const fullMsg = await mediaQueue.add(async () => {
+					try{
+					return await generateWAMessage(
+						jid,
+						content,
+						{
+							logger,
+							userJid,
+							getUrlInfo: text => getUrlInfo(
+								text,
+								{
+									thumbnailWidth: linkPreviewImageThumbnailWidth,
+									fetchOpts: {
+										timeout: 3_000,
+										...axiosOptions || {}
+									},
+									logger,
+									uploadImage: generateHighQualityLinkPreview
+										? waUploadToServer
+										: undefined
 								},
-								logger,
-								uploadImage: generateHighQualityLinkPreview
-									? waUploadToServer
-									: undefined
-							},
-						),
-						upload: waUploadToServer,
-						mediaCache: config.mediaCache,
-						options: config.options,
-						messageId: generateMessageIDV2(sock.user?.id),
-						...options,
-					}
-				)
-				const isDeleteMsg = 'delete' in content && !!content.delete
-				const isEditMsg = 'edit' in content && !!content.edit
-				const additionalAttributes: BinaryNodeAttributes = { }
+							),
+							upload: waUploadToServer,
+							mediaCache: config.mediaCache,
+							options: config.options,
+							messageId: generateMessageIDV2(sock.user?.id),
+							...options,
+						}
+					);
+				}
+				catch(err)
+				{
+					logger.error({ err },'Falha no Upload ou criação de uma mensagem')
+					return false;
+				}
+				});
+		
+				const isDeleteMsg = 'delete' in content && !!content.delete;
+				const isEditMsg = 'edit' in content && !!content.edit;
+				const additionalAttributes: BinaryNodeAttributes = {};
+		
 				// required for delete
-				if(isDeleteMsg) {
+				if (isDeleteMsg) {
 					// if the chat is a group, and I am not the author, then delete the message as an admin
-					if(isJidGroup(content.delete?.remoteJid as string) && !content.delete?.fromMe) {
-						additionalAttributes.edit = '8'
+					if (isJidGroup(content.delete?.remoteJid as string) && !content.delete?.fromMe) {
+						additionalAttributes.edit = '8';
 					} else {
-						additionalAttributes.edit = '7'
+						additionalAttributes.edit = '7';
 					}
-				} else if(isEditMsg) {
-					additionalAttributes.edit = '1'
+				} else if (isEditMsg) {
+					additionalAttributes.edit = '1';
 				}
-
-				await relayMessage(jid, fullMsg.message!, { messageId: fullMsg.key.id!, cachedGroupMetadata: options.cachedGroupMetadata, additionalAttributes, statusJidList: options.statusJidList })
-				if(config.emitOwnEvents) {
-					process.nextTick(() => {
-						processingMutex.mutex(() => (
-							upsertMessage(fullMsg, 'append')
-						))
-					})
+				if(fullMsg)
+				{
+								
+		
+				// Adiciona à fila para processar o relay
+				await relayQueue.add(async () => {
+					try {
+					await relayMessage(jid, fullMsg.message!, {
+						messageId: fullMsg.key.id!,
+						cachedGroupMetadata: options.cachedGroupMetadata,
+						additionalAttributes,
+						statusJidList: options.statusJidList
+					});
+		
+					if (config.emitOwnEvents) {
+						process.nextTick(() => {
+							processingMutex.mutex(() => (
+								upsertMessage(fullMsg, 'append')
+							));
+						});
+					}
 				}
-
-				return fullMsg
+				catch(err)
+				{
+					logger.error({ err },'Falha no processamento de uma mensagem')
+				}
+				});
+				upsertMessage(fullMsg, 'append')
+		
+				return fullMsg; // Retorna o fullMsg após o processamento
+			}
+			else
+			{
+				logger.error('Falha no processamento de uma mensagem')
+			}
 			}
 		}
+		
 	}
 }
