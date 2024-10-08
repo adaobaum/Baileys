@@ -568,8 +568,11 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 						count: +retryNode.attrs.count
 					}
 				}
-
+				const PQueue = (await import('p-queue')).default;			
+				const relayQueue = new PQueue({ concurrency: 1 });
+				relayQueue.add(async () => {
 				await relayMessage(key.remoteJid!, msg, msgRelayOpts)
+				})
 			} else {
 				logger.debug({ jid: key.remoteJid, id: ids[i] }, 'recv retry request, but message not available')
 			}
