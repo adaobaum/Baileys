@@ -9,7 +9,7 @@ import { getUrlInfo } from '../Utils/link-preview'
 import { areJidsSameUser, BinaryNode, BinaryNodeAttributes, getBinaryNodeChild, getBinaryNodeChildren, isJidGroup, isJidUser, jidDecode, jidEncode, jidNormalizedUser, JidWithDevice, S_WHATSAPP_NET } from '../WABinary'
 import { makeGroupsSocket } from './groups'
 import ListType = proto.Message.ListMessage.ListType;
-const PQueue = require('p-queue').default;
+
 
 export const makeMessagesSocket = (config: SocketConfig) => {
 	const {
@@ -731,6 +731,7 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 			content: AnyMessageContent,
 			options: MiscMessageGenerationOptions = {}
 		) => {
+			const PQueue = (await import('p-queue')).default;
 			const mediaQueue = new PQueue({ concurrency: 1 });
 			const relayQueue = new PQueue({ concurrency: 1 });
 		
