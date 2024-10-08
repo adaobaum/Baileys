@@ -814,12 +814,13 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 						logger.error({ err },'Falha no processamento de uma mensagem')
 					}
 					});
+					return fullMsg;
 
 				}
 				catch(err)
 				{
 					logger.error({ err },'Falha no Upload ou criação de uma mensagem')
-					return false;
+					
 				}
 				});	
 			
