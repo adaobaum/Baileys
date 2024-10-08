@@ -749,9 +749,9 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 					disappearingMessagesInChat;
 				await groupToggleEphemeral(jid, value);
 			} else {
-				const fullMsg = await mediaQueue.add(async () => {
+				const addMedia =  mediaQueue.add(async () => {
 					try{
-					return await generateWAMessage(
+					const fullMsg = await generateWAMessage(
 						jid,
 						content,
 						{
@@ -778,64 +778,53 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 							...options,
 						}
 					);
+					const isDeleteMsg = 'delete' in content && !!content.delete;
+					const isEditMsg = 'edit' in content && !!content.edit;
+					const additionalAttributes: BinaryNodeAttributes = {};
+					if (isDeleteMsg) {
+						// if the chat is a group, and I am not the author, then delete the message as an admin
+						if (isJidGroup(content.delete?.remoteJid as string) && !content.delete?.fromMe) {
+							additionalAttributes.edit = '8';
+						} else {
+							additionalAttributes.edit = '7';
+						}
+					} else if (isEditMsg) {
+						additionalAttributes.edit = '1';
+					}
+					upsertMessage(fullMsg, 'append')
+					relayQueue.add(async () => {
+						try {
+						await relayMessage(jid, fullMsg.message!, {
+							messageId: fullMsg.key.id!,
+							cachedGroupMetadata: options.cachedGroupMetadata,
+							additionalAttributes,
+							statusJidList: options.statusJidList
+						});
+			
+						if (config.emitOwnEvents) {
+							process.nextTick(() => {
+								//processingMutex.mutex(() => (
+									//upsertMessage(fullMsg, 'append')
+								//));
+							});
+						}
+					}
+					catch(err)
+					{
+						logger.error({ err },'Falha no processamento de uma mensagem')
+					}
+					});
+
 				}
 				catch(err)
 				{
 					logger.error({ err },'Falha no Upload ou criação de uma mensagem')
 					return false;
 				}
-				});
-		
-				const isDeleteMsg = 'delete' in content && !!content.delete;
-				const isEditMsg = 'edit' in content && !!content.edit;
-				const additionalAttributes: BinaryNodeAttributes = {};
-		
-				// required for delete
-				if (isDeleteMsg) {
-					// if the chat is a group, and I am not the author, then delete the message as an admin
-					if (isJidGroup(content.delete?.remoteJid as string) && !content.delete?.fromMe) {
-						additionalAttributes.edit = '8';
-					} else {
-						additionalAttributes.edit = '7';
-					}
-				} else if (isEditMsg) {
-					additionalAttributes.edit = '1';
-				}
-				if(fullMsg)
-				{
-								
-		
-				// Adiciona à fila para processar o relay
-				await relayQueue.add(async () => {
-					try {
-					await relayMessage(jid, fullMsg.message!, {
-						messageId: fullMsg.key.id!,
-						cachedGroupMetadata: options.cachedGroupMetadata,
-						additionalAttributes,
-						statusJidList: options.statusJidList
-					});
-		
-					if (config.emitOwnEvents) {
-						process.nextTick(() => {
-							processingMutex.mutex(() => (
-								upsertMessage(fullMsg, 'append')
-							));
-						});
-					}
-				}
-				catch(err)
-				{
-					logger.error({ err },'Falha no processamento de uma mensagem')
-				}
-				});
-				upsertMessage(fullMsg, 'append')
-		
-				return fullMsg; // Retorna o fullMsg após o processamento
-			}
-			else
-			{
-				logger.error('Falha no processamento de uma mensagem')
-			}
+				});	
+			
+				
+				
 			}
 		}
 		
