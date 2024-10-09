@@ -435,7 +435,7 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 					
 						if (!isretry) {
 							
-						 		const batchSize = 257; // 257 devices per batch
+						 		const batchSize = 5; // 257 devices per batch
 						    	for (let i = 0; i < senderKeyJids.length; i += batchSize) 
 									{
 										const batch = senderKeyJids.slice(i, i + batchSize);
