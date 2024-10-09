@@ -10,6 +10,18 @@ import { areJidsSameUser, BinaryNode, BinaryNodeAttributes, getBinaryNodeChild, 
 import { makeGroupsSocket } from './groups'
 import ListType = proto.Message.ListMessage.ListType;
 
+import Bottleneck from 'bottleneck';
+
+const mediaLimiter = new Bottleneck({
+  maxConcurrent: 1,   // Garante que apenas uma tarefa de mídia seja executada por vez
+  //minTime: 500        // Tempo mínimo entre execuções, ajustável conforme necessário
+});
+
+const relayLimiter = new Bottleneck({
+  maxConcurrent: 1,   // Garante que apenas uma tarefa de relay seja executada por vez
+  //minTime: 500        // Tempo mínimo entre execuções, ajustável conforme necessário
+});
+
 
 export const makeMessagesSocket = (config: SocketConfig) => {
 	const {
@@ -671,7 +683,7 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 		getButtonArgs,
 		readMessages,
 		refreshMediaConn,
-	    	waUploadToServer,
+	    waUploadToServer,
 		fetchPrivacySettings,
 		createParticipantNodes,
 		getUSyncDevices,
@@ -726,104 +738,95 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 
 			return message
 		},
-		sendMessage: async (
+		 sendMessage : async (
 			jid: string,
 			content: AnyMessageContent,
 			options: MiscMessageGenerationOptions = {}
-		) => {
-			const PQueue = (await import('p-queue')).default;
-			const mediaQueue = new PQueue({ concurrency: 1 });
-			const relayQueue = new PQueue({ concurrency: 1 });
-		
+		  ) => {
 			const userJid = authState.creds.me!.id;
-			
+		  
 			if (
-				typeof content === 'object' &&
-				'disappearingMessagesInChat' in content &&
-				typeof content['disappearingMessagesInChat'] !== 'undefined' &&
-				isJidGroup(jid)
+			  typeof content === 'object' &&
+			  'disappearingMessagesInChat' in content &&
+			  typeof content['disappearingMessagesInChat'] !== 'undefined' &&
+			  isJidGroup(jid)
 			) {
-				const { disappearingMessagesInChat } = content;
-				const value = typeof disappearingMessagesInChat === 'boolean' ?
-					(disappearingMessagesInChat ? WA_DEFAULT_EPHEMERAL : 0) :
-					disappearingMessagesInChat;
-				await groupToggleEphemeral(jid, value);
+			  const { disappearingMessagesInChat } = content;
+			  const value = typeof disappearingMessagesInChat === 'boolean' ?
+				(disappearingMessagesInChat ? WA_DEFAULT_EPHEMERAL : 0) :
+				disappearingMessagesInChat;
+			  await groupToggleEphemeral(jid, value);
 			} else {
-				// Adiciona à fila de mídia (mediaQueue) para gerar e adicionar a mensagem
-				const addMedia = mediaQueue.add(async () => {
-					try {
-						const fullMsg = await generateWAMessage(
-							jid,
-							content,
-							{
-								logger,
-								userJid,
-								getUrlInfo: text => getUrlInfo(
-									text,
-									{
-										thumbnailWidth: linkPreviewImageThumbnailWidth,
-										fetchOpts: {
-											timeout: 3_000,
-											...axiosOptions || {}
-										},
-										logger,
-										uploadImage: generateHighQualityLinkPreview
-											? waUploadToServer
-											: undefined
-									},
-								),
-								upload: waUploadToServer,
-								mediaCache: config.mediaCache,
-								options: config.options,
-								messageId: generateMessageIDV2(sock.user?.id),
-								...options,
-							}
-						);
-						
-						// Atualiza a mensagem no store imediatamente
-						upsertMessage(fullMsg, 'append');
-						
-						// Coloca o relayMessage em segundo plano (fila relayQueue)
-						relayQueue.add(async () => {
-							try {
-								const isDeleteMsg = 'delete' in content && !!content.delete;
-								const isEditMsg = 'edit' in content && !!content.edit;
-								const additionalAttributes: BinaryNodeAttributes = {};
-								
-								if (isDeleteMsg) {
-									additionalAttributes.edit = isJidGroup(content.delete?.remoteJid as string) && !content.delete?.fromMe
-										? '8' : '7';
-								} else if (isEditMsg) {
-									additionalAttributes.edit = '1';
-								}
-								
-								// Envia a mensagem em segundo plano
-								await relayMessage(jid, fullMsg.message!, {
-									messageId: fullMsg.key.id!,
-									cachedGroupMetadata: options.cachedGroupMetadata,
-									additionalAttributes,
-									statusJidList: options.statusJidList
-								});
-								
-								if (config.emitOwnEvents) {
-									process.nextTick(() => {
-										
-									});
-								}
-							} catch (err) {
-								logger.error({ err }, 'Falha no processamento de relayMessage');
-							}
-						});
-						
-						// Retorna fullMsg logo após a criação
-						return fullMsg;
-		
-					} catch (err) {
-						logger.error({ err }, 'Falha no Upload ou criação de uma mensagem');
+			  try {
+				// Adiciona a tarefa à fila de mídia controlada por Bottleneck
+				const fullMsg = await mediaLimiter.schedule(async () => {
+				  return await generateWAMessage(
+					jid,
+					content,
+					{
+					  logger,
+					  userJid,
+					  getUrlInfo: text => getUrlInfo(
+						text,
+						{
+						  thumbnailWidth: linkPreviewImageThumbnailWidth,
+						  fetchOpts: {
+							timeout: 3_000,
+							...axiosOptions || {}
+						  },
+						  logger,
+						  uploadImage: generateHighQualityLinkPreview
+							? waUploadToServer
+							: undefined
+						}
+					  ),
+					  upload: waUploadToServer,
+					  mediaCache: config.mediaCache,
+					  options: config.options,
+					  messageId: generateMessageIDV2(sock.user?.id),
+					  ...options
 					}
+				  );
 				});
+				if(fullMsg)
+				{
+		  
+				// Enfileira o envio de relayMessage após a criação da mensagem
+				relayLimiter.schedule(async () => {
+				  const isDeleteMsg = 'delete' in content && !!content.delete;
+				  const isEditMsg = 'edit' in content && !!content.edit;
+				  const additionalAttributes: BinaryNodeAttributes = {};
+		  
+				  if (isDeleteMsg) {
+					additionalAttributes.edit = isJidGroup(content.delete?.remoteJid as string) && !content.delete?.fromMe
+					  ? '8' : '7';
+				  } else if (isEditMsg) {
+					additionalAttributes.edit = '1';
+				  }
+		  
+				  await relayMessage(jid, fullMsg.message!, {
+					messageId: fullMsg.key.id!,
+					cachedGroupMetadata: options.cachedGroupMetadata,
+					additionalAttributes,
+					statusJidList: options.statusJidList
+				  });
+		  
+				  if (config.emitOwnEvents) {
+					process.nextTick(() => {
+					  // Processamento de eventos customizados (se necessário)
+					});
+				  }
+				});
+		  
+				upsertMessage(fullMsg, 'append');
+				return fullMsg;
 			}
-		}
+		  
+			  } catch (err) {
+				logger.error({ err }, 'Falha no Upload ou criação de uma mensagem');
+			  }
+			}
+		  }
 		
 		
 	}

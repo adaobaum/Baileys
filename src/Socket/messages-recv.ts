@@ -40,6 +40,14 @@ import {
 } from '../WABinary'
 import { extractGroupMetadata } from './groups'
 import { makeMessagesSocket } from './messages-send'
+import Bottleneck from 'bottleneck';
+
+
+
+const relayLimiter = new Bottleneck({
+  maxConcurrent: 1,   // Garante que apenas uma tarefa de relay seja executada por vez
+  //minTime: 500        // Tempo mínimo entre execuções, ajustável conforme necessário
+});
 
 export const makeMessagesRecvSocket = (config: SocketConfig) => {
 	const {
@@ -568,11 +576,10 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 						count: +retryNode.attrs.count
 					}
 				}
-				const PQueue = (await import('p-queue')).default;			
-				const relayQueue = new PQueue({ concurrency: 1 });
-				relayQueue.add(async () => {
+				relayLimiter.schedule(async () => {
 				await relayMessage(key.remoteJid!, msg, msgRelayOpts)
 				})
+				
 			} else {
 				logger.debug({ jid: key.remoteJid, id: ids[i] }, 'recv retry request, but message not available')
 			}
