@@ -788,8 +788,7 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 					}
 				  );
 				
-				if(fullMsg)
-				{
+				
 					if (config.emitOwnEvents) {
 						processingMutex.mutex(() => (
 							upsertMessage(fullMsg, 'append')
@@ -820,13 +819,7 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 		  
 				
 				return fullMsg;
-			}
-			else
-			{
-
-				logger.error('Falha no Upload ou criação de uma mensagem');
-				return false;
-			}
+					
 		  
 			  } catch (err) {
 				logger.error({ err }, 'Falha no Upload ou criação de uma mensagem');
