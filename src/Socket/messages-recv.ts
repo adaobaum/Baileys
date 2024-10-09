@@ -45,9 +45,27 @@ import Bottleneck from 'bottleneck';
 
 
 const relayLimiter = new Bottleneck({
-  maxConcurrent: 1,   // Garante que apenas uma tarefa de relay seja executada por vez
-  //minTime: 500        // Tempo mínimo entre execuções, ajustável conforme necessário
+  maxConcurrent: 1,  
+  //minTime: 500       
 });
+
+const FilaUpsert = new Bottleneck({
+	maxConcurrent: 1,  
+	//minTime: 500        
+  });
+  const FilaBadack = new Bottleneck({
+	maxConcurrent: 1,  
+	//minTime: 500        
+  });
+  const  FilaNotification = new Bottleneck({
+	maxConcurrent: 1,   
+	//minTime: 500        
+  });
+  const FilaReceipt = new Bottleneck({
+	maxConcurrent: 1,  
+	//minTime: 500        
+  });
+
 
 export const makeMessagesRecvSocket = (config: SocketConfig) => {
 	const {
@@ -978,7 +996,9 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 
 	// recv a message
 	ws.on('CB:message', (node: BinaryNode) => {
+		FilaUpsert.schedule(async () => {
 		processNodeWithBuffer(node, 'processing message', handleMessage)
+		})
 	})
 
 	ws.on('CB:call', async(node: BinaryNode) => {
@@ -986,17 +1006,22 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 	})
 
 	ws.on('CB:receipt', node => {
-		
+		FilaReceipt.schedule(async () => {
 		processNodeWithBuffer(node, 'handling receipt', handleReceipt)
+		});
 	})
 
 	ws.on('CB:notification', async(node: BinaryNode) => {
+		FilaNotification.schedule(async () => {
 		processNodeWithBuffer(node, 'handling notification', handleNotification)
+		});
 	})
 
 	ws.on('CB:ack,class:message', (node: BinaryNode) => {
+		FilaBadack.schedule(async () => {
 		handleBadAck(node)
 			.catch(error => onUnexpectedError(error, 'handling bad ack'))
+		});
 	})
 
 	ev.on('call', ([ call ]) => {
