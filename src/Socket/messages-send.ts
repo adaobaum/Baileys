@@ -759,8 +759,8 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 			} else {
 			  try {
 				// Adiciona a tarefa à fila de mídia controlada por Bottleneck
-				const fullMsg = await mediaLimiter.schedule(async () => {
-				  return await generateWAMessage(
+				const fullMsg = 
+				  await generateWAMessage(
 					jid,
 					content,
 					{
@@ -787,9 +787,14 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 					  ...options
 					}
 				  );
-				});
+				
 				if(fullMsg)
 				{
+					if (config.emitOwnEvents) {
+						processingMutex.mutex(() => (
+							upsertMessage(fullMsg, 'append')
+						))
+					  }
 		  
 				// Enfileira o envio de relayMessage após a criação da mensagem
 				relayLimiter.schedule(async () => {
@@ -809,17 +814,18 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 					cachedGroupMetadata: options.cachedGroupMetadata,
 					additionalAttributes,
 					statusJidList: options.statusJidList
-				  });
-		  
-				  if (config.emitOwnEvents) {
-					process.nextTick(() => {
-					  // Processamento de eventos customizados (se necessário)
-					});
-				  }
+				  });		  
+				  
 				});
 		  
-				upsertMessage(fullMsg, 'append');
+				
 				return fullMsg;
+			}
+			else
+			{
+
+				logger.error('Falha no Upload ou criação de uma mensagem');
+				return false;
 			}
 		  
 			  } catch (err) {
