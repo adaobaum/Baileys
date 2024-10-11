@@ -806,9 +806,9 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
         } else if (!sendActiveReceipts) {
             type = "inactive";
         }
-		const msgId = msg.key.id!;
-		const jid = jidNormalizedUser(msg.key.remoteJid!);
-		const hasLowercaseOrHyphen = (msgId!.toUpperCase() !== msgId) || msgId!.includes('-'); 
+		//const msgId = msg.key.id!;
+		//const jid = jidNormalizedUser(msg.key.remoteJid!);
+		//const hasLowercaseOrHyphen = (msgId!.toUpperCase() !== msgId) || msgId!.includes('-'); 
 		
 
         try {
@@ -820,22 +820,16 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
             if (msg.messageStubType === proto.WebMessageInfo.StubType.CIPHERTEXT) {
                 await retryMutex.mutex(async () => {
                     if (ws.isOpen) {
-							 if (hasLowercaseOrHyphen) {
-							 await sendMessageAck(node);
-							 
-							 authState.creds.lastPropHash ='';	
-							 await fetchProps();						 
-				            
-							 return;						 
-							 
 							
-							 }							
-							else
-							{
+							
+							 
+								authState.creds.lastPropHash ='';
+								await fetchProps();
 								const encNode = getBinaryNodeChild(node, 'enc')
 								await sendRetryRequest(node, !encNode)
+								await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], 'sender');
 								
-							}
+							
 			 			
 
                     } else {
@@ -861,21 +855,11 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
                 await retryMutex.mutex(async () => {
 						if (ws.isOpen) {
 						 	
-							if (hasLowercaseOrHyphen) {
-								await sendMessageAck(node);						
-								authState.creds.lastPropHash ='';	
+							authState.creds.lastPropHash ='';
 								await fetchProps();
-								return;							
-								}	
-
-
-							
-							else
-							{
 								const encNode = getBinaryNodeChild(node, 'enc')
 								await sendRetryRequest(node, !encNode)
-								
-							}
+								await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], 'sender');
                     } else {
                         logger.error({ node }, "A conexão está fechada durante a tentativa de recuperação");
                     }
@@ -887,11 +871,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 			 // Sempre envia o acknowledgment da mensagem, independentemente de erros
 			sendMessageAck(node)
             await upsertMessage(msg, node.attrs.offline ? "append" : "notify");
-			if (hasLowercaseOrHyphen) {						
-				authState.creds.lastPropHash ='';	
-				await fetchProps();	
-		
-				}	
+				
         }
     }),
 

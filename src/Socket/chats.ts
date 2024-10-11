@@ -834,9 +834,21 @@ export const makeChatsSocket = (config: SocketConfig) => {
 	}
 
 	const upsertMessage = ev.createBufferedFunction(async(msg: WAMessage, type: MessageUpsertType) => {
+		if(msg.messageStubType && msg.messageStubType === proto.WebMessageInfo.StubType.CIPHERTEXT )
+		{
+
+			await resyncAppState(ALL_WA_PATCH_NAMES, true)
+			const accountSyncCounter = (authState.creds.accountSyncCounter || 0) + 1
+			ev.emit('creds.update', { accountSyncCounter })
+			authState.creds.lastPropHash = '';
+			await fetchProps();
+			ev.flush();
+			return;
+		}
+
 		ev.emit('messages.upsert', { messages: [msg], type })
 
-		if(!!msg.pushName) {
+		if (msg.pushName !== undefined && msg.pushName !== null) { 
 			let jid = msg.key.fromMe ? authState.creds.me!.id : (msg.key.participant || msg.key.remoteJid)
 			jid = jidNormalizedUser(jid!)
 
