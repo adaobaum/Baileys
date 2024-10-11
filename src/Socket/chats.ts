@@ -848,17 +848,17 @@ export const makeChatsSocket = (config: SocketConfig) => {
 
 		ev.emit('messages.upsert', { messages: [msg], type })
 
-		if (msg.pushName !== undefined && msg.pushName !== null) { 
+		if (!msg.pushName) { 
 			let jid = msg.key.fromMe ? authState.creds.me!.id : (msg.key.participant || msg.key.remoteJid)
 			jid = jidNormalizedUser(jid!)
 
 			if(!msg.key.fromMe) {
-				ev.emit('contacts.update', [{ id: jid, notify: msg.pushName, verifiedName: msg.verifiedBizName! }])
+				ev.emit('contacts.update', [{ id: jid, notify: msg.pushName || undefined, verifiedName: msg.verifiedBizName! }])
 			}
 
 			// update our pushname too
-			if(msg.key.fromMe && msg.pushName && authState.creds.me?.name !== msg.pushName) {
-				ev.emit('creds.update', { me: { ...authState.creds.me!, name: msg.pushName } })
+			if(msg.key.fromMe && msg.pushName && authState.creds.me?.name !== msg.pushName|| undefined) {
+				ev.emit('creds.update', { me: { ...authState.creds.me!, name: msg.pushName || undefined } })
 			}
 		}
 
