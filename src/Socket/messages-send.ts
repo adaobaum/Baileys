@@ -447,7 +447,7 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 								}
 							else
 							{
-								await assertSessions(senderKeyJids, true)
+								await assertSessions(senderKeyJids, false)
 							}
 
 
