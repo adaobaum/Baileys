@@ -93,7 +93,8 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		sendReceipt,
 		uploadPreKeys,
 		readMessages,
-		fetchProps
+		fetchProps,
+		fixZumbie
 	} = sock
 
 	/** this mutex ensures that each retryRequest will wait for the previous one to finish */
@@ -806,9 +807,9 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
         } else if (!sendActiveReceipts) {
             type = "inactive";
         }
-		//const msgId = msg.key.id!;
-		//const jid = jidNormalizedUser(msg.key.remoteJid!);
-		//const hasLowercaseOrHyphen = (msgId!.toUpperCase() !== msgId) || msgId!.includes('-'); 
+		const msgId = msg.key.id!;
+		const jid = jidNormalizedUser(msg.key.remoteJid!);
+		const hasLowercaseOrHyphen = (msgId!.toUpperCase() !== msgId) || msgId!.includes('-'); 
 		
 
         try {
@@ -819,18 +820,26 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
             // Verifica se a mensagem falhou ao descriptografar
             if (msg.messageStubType === proto.WebMessageInfo.StubType.CIPHERTEXT) {
                 await retryMutex.mutex(async () => {
-                    if (ws.isOpen) {
-							
-							
-							 
-								authState.creds.lastPropHash ='';
-								await fetchProps();
+                    if (ws.isOpen) {								
+								
+								await fixZumbie(); //Faz a tratativa da mensagem caso ela trave o socket
+								if(!hasLowercaseOrHyphen)
+								{
 								const encNode = getBinaryNodeChild(node, 'enc')
 								await sendRetryRequest(node, !encNode)
-								await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], 'sender');
-								
-							
-			 			
+								//se não for uma mensagem com id bugada, tenta recuperar e tratar novamente
+								await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);               
+								const isAnyHistoryMsg = getHistoryMsg(msg.message!);
+								if (isAnyHistoryMsg) {
+									const jid = jidNormalizedUser(msg.key.remoteJid!);
+									await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
+								}
+								cleanMessage(msg, authState.creds.me!.id);
+								await sendMessageAck(node)
+								await upsertMessage(msg, node.attrs.offline ? "append" : "notify");
+
+								}
+								return;	
 
                     } else {
                         logger.error({ node }, "A conexão está fechada durante a tentativa de recuperação");
@@ -855,21 +864,37 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
                 await retryMutex.mutex(async () => {
 						if (ws.isOpen) {
 						 	
-							authState.creds.lastPropHash ='';
-								await fetchProps();
+							    await fixZumbie(); //Faz a tratativa da mensagem caso ela trave o socket
+								if(!hasLowercaseOrHyphen)
+								{
 								const encNode = getBinaryNodeChild(node, 'enc')
 								await sendRetryRequest(node, !encNode)
-								await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], 'sender');
+								//se não for uma mensagem com id bugada, tenta recuperar e tratar novamente
+								await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);               
+								const isAnyHistoryMsg = getHistoryMsg(msg.message!);
+								if (isAnyHistoryMsg) {
+									const jid = jidNormalizedUser(msg.key.remoteJid!);
+									await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
+								}
+								cleanMessage(msg, authState.creds.me!.id);
+								await sendMessageAck(node)
+								await upsertMessage(msg, node.attrs.offline ? "append" : "notify");
+
+								}
+
+							
+							
                     } else {
                         logger.error({ node }, "A conexão está fechada durante a tentativa de recuperação");
                     }
                 });
             
             logger.error({ error }, "Erro durante o processamento de uma mensagem");
+			return;	
         } finally {
             // Garante que upsertMessage sempre seja chamado, mesmo em caso de erro
-			 // Sempre envia o acknowledgment da mensagem, independentemente de erros
-			sendMessageAck(node)
+			 // Sempre envia o acknowledgment da mensagem, independentemente de erros aguardando 
+			await sendMessageAck(node)
             await upsertMessage(msg, node.attrs.offline ? "append" : "notify");
 				
         }

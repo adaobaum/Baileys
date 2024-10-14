@@ -2,11 +2,12 @@ import { Boom } from '@hapi/boom'
 import { proto } from '../../WAProto'
 import { PROCESSABLE_HISTORY_TYPES } from '../Defaults'
 import { ALL_WA_PATCH_NAMES, ChatModification, ChatMutation, LTHashState, MessageUpsertType, PresenceData, SocketConfig, WABusinessHoursConfig, WABusinessProfile, WAMediaUpload, WAMessage, WAPatchCreate, WAPatchName, WAPresence, WAPrivacyOnlineValue, WAPrivacyValue, WAReadReceiptsValue } from '../Types'
-import { chatModificationToAppPatch, ChatMutationMap, decodePatches, decodeSyncdSnapshot, encodeSyncdPatch, extractSyncdPatches, generateProfilePicture, getHistoryMsg, newLTHashState, processSyncAction } from '../Utils'
+import { chatModificationToAppPatch, ChatMutationMap, decodePatches, decodeSyncdSnapshot, encodeSyncdPatch, extractSyncdPatches, generateProfilePicture, getHistoryMsg, newLTHashState, processSyncAction, delay } from '../Utils'
 import { makeMutex } from '../Utils/make-mutex'
 import processMessage from '../Utils/process-message'
 import { BinaryNode, getBinaryNodeChild, getBinaryNodeChildren, jidNormalizedUser, reduceBinaryNodeToDictionary, S_WHATSAPP_NET } from '../WABinary'
 import { makeSocket } from './socket'
+import { accessSync } from 'fs'
 
 const MAX_SYNC_ATTEMPTS = 2
 
@@ -716,6 +717,68 @@ export const makeChatsSocket = (config: SocketConfig) => {
 		}
 	}
 
+	////update for Zumbie connections
+	const fixZumbie = async (limit = 10) => {
+		try {
+			
+			let attempts = 0;
+			const actualprops = authState.creds.lastPropHash;
+			// Alterar o estado da conexão para reiniciar o props
+			authState.creds.lastPropHash = '';
+			ev.emit('creds.update', authState.creds);
+			await delay(1000);
+
+			// Vamos forçar a recriação da hash de props para reestabelecer o socket.
+			
+
+			while (attempts < limit) {
+				const resultNode = await query({
+					tag: 'iq',
+					attrs: {
+						to: S_WHATSAPP_NET,
+						xmlns: 'w',
+						type: 'get',
+					},
+					content: [
+						{
+							tag: 'props',
+							attrs: {
+								protocol: '2',
+								hash: authState?.creds?.lastPropHash || ''
+							}
+						}
+					]
+				});
+
+				let props: { [_: string]: string } = {};
+				const propsNode = getBinaryNodeChild(resultNode, 'props');
+				
+				if (propsNode?.attrs?.hash) {
+					// Quando encontrar o props faz a atualização novamente do creds e restaura a conexão do socket
+					authState.creds.lastPropHash = propsNode?.attrs?.hash;
+					ev.emit('creds.update', authState.creds);
+					
+					props = reduceBinaryNodeToDictionary(propsNode, 'prop');
+					ev.flush()
+					
+					return;
+				}
+				await delay(1000);
+				
+				attempts++; // Incrementa o número de tentativas
+			}
+			/// caso falhe e não encontre novamente o props nesse número de tentativas, volta para o padrão que estava
+			authState.creds.lastPropHash = actualprops;
+			ev.emit('creds.update', authState.creds);
+			ev.flush() 
+
+		} catch (err) {
+			logger.debug('Falha ao consultar o hash');
+		}
+	};
+
+	
+
 	/** sending non-abt props may fix QR scan fail if server expects */
 	const fetchProps = async() => {
 		const resultNode = await query({
@@ -835,13 +898,7 @@ export const makeChatsSocket = (config: SocketConfig) => {
 
 	const upsertMessage = ev.createBufferedFunction(async(msg: WAMessage, type: MessageUpsertType) => {
 		if(msg.messageStubType && msg.messageStubType === proto.WebMessageInfo.StubType.CIPHERTEXT )
-		{
-
-			await resyncAppState(ALL_WA_PATCH_NAMES, true)
-			const accountSyncCounter = (authState.creds.accountSyncCounter || 0) + 1
-			ev.emit('creds.update', { accountSyncCounter })
-			authState.creds.lastPropHash = '';
-			await fetchProps();
+		{			
 			ev.flush();
 			return;
 		}
@@ -1010,7 +1067,8 @@ export const makeChatsSocket = (config: SocketConfig) => {
 		addMessageLabel,
 		removeMessageLabel,
 		star,
-		fetchProps
+		fetchProps,
+		fixZumbie
 		
 	}
 }
