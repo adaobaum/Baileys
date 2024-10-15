@@ -94,8 +94,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		uploadPreKeys,
 		readMessages,
 		fetchProps,
-		fixZumbie
-	} = sock
+		} = sock
 
 	/** this mutex ensures that each retryRequest will wait for the previous one to finish */
 	const retryMutex = makeMutex()
@@ -770,6 +769,44 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		])
 	}
 
+	const fixZumbie = async (node, limit = 10) => {
+		try {
+			
+			let attempts = 0;
+			
+			 ev.flush(); ///iniciando limpando os eventos
+			
+			// Vamos forçar a recriação da hash de props para reestabelecer o socket e reconstruir o creds.
+			
+
+			while (attempts < limit) {
+			authState.creds.lastPropHash = '';
+			ev.emit('creds.update', authState.creds);
+			await delay(1000);
+			// agora vamos recriar o props
+			await fetchProps();
+			await delay(1000);			
+
+				
+			attempts++; 
+			}
+			//finalizado as tentativas de recuperar o props, vamos forçar uma sincronização
+			
+				const name = 'regular' as WAPatchName
+				await resyncAppState([name], false)
+			
+
+			// agora vamos deletar a mensagem
+			node = null
+			ev.flush();
+			
+
+		} catch (err) {
+			logger.debug('Falha ao consultar o hash');
+		}
+	};
+
+
 	const handleMessage = async(node: BinaryNode) => {
 		if(shouldIgnoreJid(node.attrs.from!) && node.attrs.from! !== '@s.whatsapp.net') {
 			logger.debug({ key: node.attrs.key }, 'ignored message')
@@ -822,24 +859,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
                 await retryMutex.mutex(async () => {
                     if (ws.isOpen) {								
 								
-								await fixZumbie(); //Faz a tratativa da mensagem caso ela trave o socket
-								if(!hasLowercaseOrHyphen)
-								{
-								const encNode = getBinaryNodeChild(node, 'enc')
-								await sendRetryRequest(node, !encNode)
-								//se não for uma mensagem com id bugada, tenta recuperar e tratar novamente
-								await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);               
-								const isAnyHistoryMsg = getHistoryMsg(msg.message!);
-								if (isAnyHistoryMsg) {
-									const jid = jidNormalizedUser(msg.key.remoteJid!);
-									await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
-								}
-								cleanMessage(msg, authState.creds.me!.id);
-								await sendMessageAck(node)
-								await upsertMessage(msg, node.attrs.offline ? "append" : "notify");
-
-								}
-								return;	
+								
 
                     } else {
                         logger.error({ node }, "A conexão está fechada durante a tentativa de recuperação");
@@ -864,23 +884,9 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
                 await retryMutex.mutex(async () => {
 						if (ws.isOpen) {
 						 	
-							    await fixZumbie(); //Faz a tratativa da mensagem caso ela trave o socket
-								if(!hasLowercaseOrHyphen)
-								{
-								const encNode = getBinaryNodeChild(node, 'enc')
-								await sendRetryRequest(node, !encNode)
-								//se não for uma mensagem com id bugada, tenta recuperar e tratar novamente
-								await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);               
-								const isAnyHistoryMsg = getHistoryMsg(msg.message!);
-								if (isAnyHistoryMsg) {
-									const jid = jidNormalizedUser(msg.key.remoteJid!);
-									await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
-								}
-								cleanMessage(msg, authState.creds.me!.id);
-								await sendMessageAck(node)
-								await upsertMessage(msg, node.attrs.offline ? "append" : "notify");
-
-								}
+							await fixZumbie(node); 
+							///vou implementar uma logica de recuperação dessas mensagens, por hora elas não estão sendo perdidas
+							return;	
 
 							
 							

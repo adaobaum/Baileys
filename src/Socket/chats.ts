@@ -717,66 +717,7 @@ export const makeChatsSocket = (config: SocketConfig) => {
 		}
 	}
 
-	////update for Zumbie connections
-	const fixZumbie = async (limit = 10) => {
-		try {
-			
-			let attempts = 0;
-			const actualprops = authState.creds.lastPropHash;
-			// Alterar o estado da conexão para reiniciar o props
-			authState.creds.lastPropHash = '';
-			ev.emit('creds.update', authState.creds);
-			await delay(1000);
-
-			// Vamos forçar a recriação da hash de props para reestabelecer o socket.
-			
-
-			while (attempts < limit) {
-				const resultNode = await query({
-					tag: 'iq',
-					attrs: {
-						to: S_WHATSAPP_NET,
-						xmlns: 'w',
-						type: 'get',
-					},
-					content: [
-						{
-							tag: 'props',
-							attrs: {
-								protocol: '2',
-								hash: authState?.creds?.lastPropHash || ''
-							}
-						}
-					]
-				});
-
-				let props: { [_: string]: string } = {};
-				const propsNode = getBinaryNodeChild(resultNode, 'props');
-				
-				if (propsNode?.attrs?.hash) {
-					// Quando encontrar o props faz a atualização novamente do creds e restaura a conexão do socket
-					authState.creds.lastPropHash = propsNode?.attrs?.hash;
-					ev.emit('creds.update', authState.creds);
-					
-					props = reduceBinaryNodeToDictionary(propsNode, 'prop');
-					ev.flush()
-					
-					return;
-				}
-				await delay(1000);
-				
-				attempts++; // Incrementa o número de tentativas
-			}
-			/// caso falhe e não encontre novamente o props nesse número de tentativas, volta para o padrão que estava
-			authState.creds.lastPropHash = actualprops;
-			ev.emit('creds.update', authState.creds);
-			ev.flush() 
-
-		} catch (err) {
-			logger.debug('Falha ao consultar o hash');
-		}
-	};
-
+	
 	
 
 	/** sending non-abt props may fix QR scan fail if server expects */
@@ -1068,7 +1009,7 @@ export const makeChatsSocket = (config: SocketConfig) => {
 		removeMessageLabel,
 		star,
 		fetchProps,
-		fixZumbie
+		
 		
 	}
 }
