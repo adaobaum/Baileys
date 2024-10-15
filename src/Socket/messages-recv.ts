@@ -769,7 +769,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		])
 	}
 
-	const fixZumbie = async (node, limit = 10) => {
+	const fixZumbie = async (limit = 5) => {
 		try {
 			
 			let attempts = 0;
@@ -796,8 +796,8 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 				await resyncAppState([name], false)
 			
 
-			// agora vamos deletar a mensagem
-			node = null;
+			
+			
 			ev.flush();
 			
 
@@ -857,8 +857,15 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
             // Verifica se a mensagem falhou ao descriptografar
             if (msg.messageStubType === proto.WebMessageInfo.StubType.CIPHERTEXT) {
                 await retryMutex.mutex(async () => {
-                    if (ws.isOpen) {								
-						await fixZumbie(node)
+                    if (ws.isOpen) {	
+						node = {} as BinaryNode				
+						await fixZumbie()
+						cleanMessage(msg, authState.creds.me!.id);
+						const jid = jidNormalizedUser(msg.key.remoteJid!);
+						await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], 'sender');
+                        await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
+						
+
 							return;			
 								
 
@@ -884,8 +891,15 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
         } catch (error) {
                 await retryMutex.mutex(async () => {
 						if (ws.isOpen) {
-							await fixZumbie(node)
-							return;		
+						node = {} as BinaryNode				
+						await fixZumbie()
+						cleanMessage(msg, authState.creds.me!.id);
+						const jid = jidNormalizedUser(msg.key.remoteJid!);
+						await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], 'sender');
+                        await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
+						
+
+						return;			
 									
 
 							
