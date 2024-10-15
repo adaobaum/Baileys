@@ -797,7 +797,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 			
 
 			// agora vamos deletar a mensagem
-			node = null
+			node = null;
 			ev.flush();
 			
 
@@ -858,7 +858,8 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
             if (msg.messageStubType === proto.WebMessageInfo.StubType.CIPHERTEXT) {
                 await retryMutex.mutex(async () => {
                     if (ws.isOpen) {								
-								
+						await fixZumbie(node)
+							return;			
 								
 
                     } else {
@@ -883,10 +884,9 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
         } catch (error) {
                 await retryMutex.mutex(async () => {
 						if (ws.isOpen) {
-						 	
-							await fixZumbie(node); 
-							///vou implementar uma logica de recuperação dessas mensagens, por hora elas não estão sendo perdidas
-							return;	
+							await fixZumbie(node)
+							return;		
+									
 
 							
 							
