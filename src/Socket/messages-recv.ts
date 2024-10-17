@@ -867,7 +867,8 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 						await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], 'sender');
                         await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
 						cleanMessage(msg, authState.creds.me!.id);
-						await fixZumbie(2)
+						await fixZumbie(2);
+						await sendMessageAck(node);
 
 						
 								
