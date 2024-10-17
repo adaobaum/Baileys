@@ -4,7 +4,7 @@ import { randomBytes } from 'crypto'
 import NodeCache from 'node-cache'
 import { proto } from '../../WAProto'
 import { DEFAULT_CACHE_TTLS, KEY_BUNDLE_TYPE, MIN_PREKEY_COUNT } from '../Defaults'
-import { MessageReceiptType, MessageRelayOptions, MessageUserReceipt, SocketConfig, WACallEvent, WAMessageKey, WAMessageStatus, WAMessageStubType, WAPatchName } from '../Types'
+import { MessageReceiptType, MessageRelayOptions, MessageUserReceipt, MinimalMessage, SocketConfig, WACallEvent, WAMessageKey, WAMessageStatus, WAMessageStubType, WAPatchName } from '../Types'
 import {
 	aesDecryptCTR,
 	aesEncryptGCM,
@@ -795,7 +795,9 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 				const name = 'regular' as WAPatchName
 				await resyncAppState([name], false)
 			
-
+                if (authState.creds.processedHistoryMessages) {
+					delete authState.creds.processedHistoryMessages;
+				}
 			
 			
 			ev.flush();
@@ -858,15 +860,16 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
             if (msg.messageStubType === proto.WebMessageInfo.StubType.CIPHERTEXT) {
                 await retryMutex.mutex(async () => {
                     if (ws.isOpen) {	
-						node = {} as BinaryNode				
-						await fixZumbie()
-						cleanMessage(msg, authState.creds.me!.id);
+						
+						
+						
 						const jid = jidNormalizedUser(msg.key.remoteJid!);
 						await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], 'sender');
                         await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
-						
+						cleanMessage(msg, authState.creds.me!.id);
+						await fixZumbie(2)
 
-							return;			
+						
 								
 
                     } else {
@@ -884,6 +887,12 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
                     await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
                 }
 				 cleanMessage(msg, authState.creds.me!.id);
+				 await sendMessageAck(node)
+                 await upsertMessage(msg, node.attrs.offline ? "append" : "notify");
+				 if(hasLowercaseOrHyphen)
+				 {
+					await fixZumbie(1);
+				 }
 				
             }	
 
@@ -891,16 +900,11 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
         } catch (error) {
                 await retryMutex.mutex(async () => {
 						if (ws.isOpen) {
-						node = {} as BinaryNode				
-						await fixZumbie()
-						cleanMessage(msg, authState.creds.me!.id);
-						const jid = jidNormalizedUser(msg.key.remoteJid!);
-						await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], 'sender');
-                        await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
-						
-
-						return;			
-									
+							const jid = jidNormalizedUser(msg.key.remoteJid!);
+							await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], 'sender');
+							await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
+							cleanMessage(msg, authState.creds.me!.id);
+							await fixZumbie(2);									
 
 							
 							
@@ -911,13 +915,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
             
             logger.error({ error }, "Erro durante o processamento de uma mensagem");
 			return;	
-        } finally {
-            // Garante que upsertMessage sempre seja chamado, mesmo em caso de erro
-			 // Sempre envia o acknowledgment da mensagem, independentemente de erros aguardando 
-			await sendMessageAck(node)
-            await upsertMessage(msg, node.attrs.offline ? "append" : "notify");
-				
-        }
+        } 
     }),
 
    
