@@ -771,7 +771,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 
 	const fixZumbie = async (limit = 5) => {
 		try {
-			
+			logger.error("Mensagem bugada detectada, iniciando o procedimento anti trava/recuperação do socket");
 			let attempts = 0;
 			
 			 ev.flush(); ///iniciando limpando os eventos
