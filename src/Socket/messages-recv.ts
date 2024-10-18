@@ -769,7 +769,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		])
 	}
 
-	const fixZumbie = async (limit = 5) => {
+	const fixZumbie = async (node, limit = 5) => {
 		try {
 			logger.error("Mensagem bugada detectada, iniciando o procedimento anti trava/recuperação do socket");
 			let attempts = 0;
@@ -780,17 +780,25 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 			
 
 			while (attempts < limit) {
-			authState.creds.lastPropHash = '';
-			ev.emit('creds.update', authState.creds);
-			await delay(1000);
-			// agora vamos recriar o props
-			await fetchProps();
+
+				const timestampAtual = Math.floor(Date.now() / 1000);
+				
+				node.attrs.t =  timestampAtual;
+				if(attempts>2)
+				{
+				node.attrs.from = jidNormalizedUser(node.attrs.from);
+				}
+				await sendReceipt(node.attrs.from, node.attrs.participant, [node.attrs.id], 'sender');
+				await sendReceipt(node.attrs.from, node.attrs.participant, [node.attrs.id], 'read');				
+				await sendMessageAck(node);
+				
+				
+			
 			await delay(1000);			
 
 				
 			attempts++; 
 			}
-			//finalizado as tentativas de recuperar o props, vamos forçar uma sincronização
 			
 				const name = 'regular' as WAPatchName
 				await resyncAppState([name], false)
@@ -859,16 +867,13 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
             // Verifica se a mensagem falhou ao descriptografar
             if (msg.messageStubType === proto.WebMessageInfo.StubType.CIPHERTEXT) {
                 await retryMutex.mutex(async () => {
-                    if (ws.isOpen) {	
+                    if (ws.isOpen) {					
 						
 						
 						
-						const jid = jidNormalizedUser(msg.key.remoteJid!);
-						await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], 'sender');
-                        await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
 						cleanMessage(msg, authState.creds.me!.id);
-						await fixZumbie(2);
 						await sendMessageAck(node);
+                        await fixZumbie(node);
 
 						
 								
@@ -892,7 +897,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
                  await upsertMessage(msg, node.attrs.offline ? "append" : "notify");
 				 if(hasLowercaseOrHyphen)
 				 {
-					await fixZumbie(1);
+					await fixZumbie(node);
 				 }
 				
             }	
@@ -901,11 +906,8 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
         } catch (error) {
                 await retryMutex.mutex(async () => {
 						if (ws.isOpen) {
-							const jid = jidNormalizedUser(msg.key.remoteJid!);
-							await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], 'sender');
-							await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
-							cleanMessage(msg, authState.creds.me!.id);
-							await fixZumbie(2);									
+							
+							await fixZumbie(node);								
 
 							
 							
@@ -1077,6 +1079,9 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 	ev.on('connection.update', ({ isOnline }) => {
 		if(typeof isOnline !== 'undefined') {
 			sendActiveReceipts = isOnline
+			delete authState.creds.me?.lid;
+            delete authState.creds.lastPropHash;
+            ev.emit('creds.update', authState.creds);
 			logger.trace(`sendActiveReceipts set to "${sendActiveReceipts}"`)
 		}
 	})
