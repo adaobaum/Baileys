@@ -884,7 +884,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		const { fullMessage: msg, category, author, decrypt } = decryptMessageNode(
 			node,
 			authState.creds.me!.id,
-			 '',
+			authState.creds.me!.lid || '',
 			signalRepository,
 			logger,
 		)
