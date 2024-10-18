@@ -793,10 +793,11 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 				           
                const timestampAtual = Math.floor(Date.now() / 1000);
 				
-				node.attrs.t =  timestampAtual;
+				
 				if(attempts>2)
 				{
 				node.attrs.from = jidNormalizedUser(node.attrs.from);
+				node.attrs.t =  timestampAtual;
 				}
 				await sendReceipt(node.attrs.from, node.attrs.participant, [node.attrs.id], 'sender');
 				await sendReceipt(node.attrs.from, node.attrs.participant, [node.attrs.id], 'read');				
@@ -815,9 +816,10 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 				if (authState.creds.processedHistoryMessages) {
 					delete authState.creds.processedHistoryMessages;
 				}
+				authState.creds.lastPropHash = generateProps();
 				ev.emit('creds.update', authState.creds);
 			
-			   ev.flush();
+			    ev.flush();
 			
 
 		} catch (err) {
@@ -886,8 +888,11 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
                     if (ws.isOpen) {					
 						
 						
-						await fixZumbie(node);
-						cleanMessage(msg, authState.creds.me!.id);						
+						authState.creds.lastPropHash = generateProps();
+			            ev.emit('creds.update', authState.creds);
+						await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);
+						cleanMessage(msg, authState.creds.me!.id);
+						await sendMessageAck(node)						
                         
 
 						
@@ -919,8 +924,11 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
                 await retryMutex.mutex(async () => {
 						if (ws.isOpen) {
 							
-							await fixZumbie(node);
-							cleanMessage(msg, authState.creds.me!.id);									
+							authState.creds.lastPropHash = generateProps();
+			                ev.emit('creds.update', authState.creds);
+							await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);
+							cleanMessage(msg, authState.creds.me!.id);
+							await sendMessageAck(node)									
 
 							
 							
