@@ -934,7 +934,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 							{
 							await sendMessageAck(node);
 							}						
-                         await fixZumbie(node,2);
+                         await fixZumbie(node);
 
 						
 								
@@ -963,7 +963,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
                  await upsertMessage(msg, node.attrs.offline ? "append" : "notify");
 				 if(very)
 					{
-						await fixZumbie(2);
+						await fixZumbie(node,2);
 					}
 				 
 				
