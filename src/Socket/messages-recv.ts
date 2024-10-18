@@ -768,14 +768,6 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 			sendMessageAck(node)
 		])
 	}
-	const generateProps = (length = 6) => {
-        const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-        let result = '';
-        for (let i = 0; i < length; i++) {
-            result += characters.charAt(Math.floor(Math.random() * characters.length));
-        }
-        return result;  // Não precisa ser async aqui
-    };
 
 	const fixZumbie = async (node, limit = 5) => {
 		try {
@@ -788,9 +780,6 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 			
 
 			while (attempts < limit) {
-				authState.creds.lastPropHash = generateProps();
-                
-                ev.emit('creds.update', authState.creds);
 
 				const timestampAtual = Math.floor(Date.now() / 1000);
 				
