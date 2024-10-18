@@ -785,14 +785,13 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 			 ev.flush(); ///iniciando limpando os eventos
 			
 			// Vamos forçar a recriação da hash de props para reestabelecer o socket e reconstruir o creds.
-			
+			authState.creds.lastPropHash = generateProps();
+			ev.emit('creds.update', authState.creds);
+			await delay(1000);     
 
 			while (attempts < limit) {
-				authState.creds.lastPropHash = generateProps();
-                
-                ev.emit('creds.update', authState.creds);
-
-				const timestampAtual = Math.floor(Date.now() / 1000);
+				           
+               const timestampAtual = Math.floor(Date.now() / 1000);
 				
 				node.attrs.t =  timestampAtual;
 				if(attempts>2)
@@ -805,21 +804,20 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 				
 				
 			
-			await delay(1000);			
+			    await delay(1000);			
 
 				
-			attempts++; 
+			  attempts++; 
 			}
 			
 				const name = 'regular' as WAPatchName
 				await resyncAppState([name], false)
-			
-                if (authState.creds.processedHistoryMessages) {
+				if (authState.creds.processedHistoryMessages) {
 					delete authState.creds.processedHistoryMessages;
 				}
+				ev.emit('creds.update', authState.creds);
 			
-			
-			ev.flush();
+			   ev.flush();
 			
 
 		} catch (err) {
@@ -829,6 +827,15 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 
 
 	const handleMessage = async(node: BinaryNode) => {
+
+		const msgId = node.attrs.id;
+		
+		const hasLowercaseOrHyphen = (msgId!.toUpperCase() !== msgId) || msgId!.includes('-'); 
+		if(hasLowercaseOrHyphen)
+			{
+			   await fixZumbie(node);
+			}
+
 		if(shouldIgnoreJid(node.attrs.from!) && node.attrs.from! !== '@s.whatsapp.net') {
 			logger.debug({ key: node.attrs.key }, 'ignored message')
 			await sendMessageAck(node)
@@ -838,7 +845,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		const { fullMessage: msg, category, author, decrypt } = decryptMessageNode(
 			node,
 			authState.creds.me!.id,
-			authState.creds.me!.lid || '',
+			 '',
 			signalRepository,
 			logger,
 		)
@@ -865,9 +872,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
         } else if (!sendActiveReceipts) {
             type = "inactive";
         }
-		const msgId = msg.key.id!;
-		const jid = jidNormalizedUser(msg.key.remoteJid!);
-		const hasLowercaseOrHyphen = (msgId!.toUpperCase() !== msgId) || msgId!.includes('-'); 
+	
 		
 
         try {
@@ -881,10 +886,9 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
                     if (ws.isOpen) {					
 						
 						
-						
-						cleanMessage(msg, authState.creds.me!.id);
-						await sendMessageAck(node);
-                        await fixZumbie(node);
+						await fixZumbie(node);
+						cleanMessage(msg, authState.creds.me!.id);						
+                        
 
 						
 								
@@ -906,10 +910,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 				 cleanMessage(msg, authState.creds.me!.id);
 				 await sendMessageAck(node)
                  await upsertMessage(msg, node.attrs.offline ? "append" : "notify");
-				 if(hasLowercaseOrHyphen)
-				 {
-					await fixZumbie(node);
-				 }
+				 
 				
             }	
 
@@ -918,7 +919,8 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
                 await retryMutex.mutex(async () => {
 						if (ws.isOpen) {
 							
-							await fixZumbie(node);								
+							await fixZumbie(node);
+							cleanMessage(msg, authState.creds.me!.id);									
 
 							
 							
@@ -1089,10 +1091,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 
 	ev.on('connection.update', ({ isOnline }) => {
 		if(typeof isOnline !== 'undefined') {
-			sendActiveReceipts = isOnline
-			delete authState.creds.me?.lid;
-            delete authState.creds.lastPropHash;
-            ev.emit('creds.update', authState.creds);
+			sendActiveReceipts = isOnline			
 			logger.trace(`sendActiveReceipts set to "${sendActiveReceipts}"`)
 		}
 	})
