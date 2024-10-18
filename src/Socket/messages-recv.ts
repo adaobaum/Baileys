@@ -871,9 +871,8 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 
 
 	const handleMessage = async(node: BinaryNode) => {
-
 		
-		await fixZumbie(node);			
+		
 
 		if(shouldIgnoreJid(node.attrs.from!) && node.attrs.from! !== '@s.whatsapp.net') {
 			logger.debug({ key: node.attrs.key }, 'ignored message')
