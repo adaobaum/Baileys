@@ -733,10 +733,15 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 			),
 			
 		])
-		sendMessageAck(node)
+		const very = verifyZumbie(node);
+		if(very !=='nosendack')
+		{
+			 sendMessageAck(node);
+		}
 	}
 
 	const handleNotification = async(node: BinaryNode) => {
+		
 		const remoteJid = node.attrs.from
 		if(shouldIgnoreJid(remoteJid) && remoteJid !== '@s.whatsapp.net') {
 			logger.debug({ remoteJid, id: node.attrs.id }, 'ignored notification')
@@ -763,9 +768,18 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 						const fullMsg = proto.WebMessageInfo.fromObject(msg)
 						await upsertMessage(fullMsg, 'append')
 					}
+					const very = verifyZumbie(node);
+					if(very !=='nosendack')
+					{
+					sendMessageAck(node);
+					}
+
 				}
+				
 			),
-			sendMessageAck(node)
+			
+		 
+			
 		])
 	}
 	const generateProps = (length = 6) => {
@@ -776,9 +790,30 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
         }
         return result;  // Não precisa ser async aqui
     };
+	const verifyZumbie = (node) => {
+		const msgId = node?.attrs?.id; 
+	
+		if (!msgId) {
+			return; 
+		}
+	
+		const hasLowercaseOrHyphen = msgId.toUpperCase() !== msgId || msgId.includes('-');
+	
+		if (hasLowercaseOrHyphen) {
+			return msgId.includes('-') ? 'sendack' : 'nosendack';
+		}
+	
+		return;
+	};
+	
 
 	const fixZumbie = async (node, limit = 5) => {
 		try {
+			const verify = verifyZumbie(node);
+			if(!verify)
+			{
+				return;
+			}
 			logger.error("Mensagem bugada detectada, iniciando o procedimento anti trava/recuperação do socket, refazendo o props");
 			let attempts = 0;
 			
@@ -800,8 +835,11 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 				node.attrs.t =  timestampAtual;
 				}
 				await sendReceipt(node.attrs.from, node.attrs.participant, [node.attrs.id], 'sender');
-				await sendReceipt(node.attrs.from, node.attrs.participant, [node.attrs.id], 'read');				
+				await sendReceipt(node.attrs.from, node.attrs.participant, [node.attrs.id], 'read');
+			    if(verify=='sendack')
+				{				
 				await sendMessageAck(node);
+				}
 				
 				
 			
@@ -830,13 +868,8 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 
 	const handleMessage = async(node: BinaryNode) => {
 
-		const msgId = node.attrs.id;
 		
-		const hasLowercaseOrHyphen = (msgId!.toUpperCase() !== msgId) || msgId!.includes('-'); 
-		if(hasLowercaseOrHyphen)
-			{
-			   await fixZumbie(node);
-			}
+		await fixZumbie(node);			
 
 		if(shouldIgnoreJid(node.attrs.from!) && node.attrs.from! !== '@s.whatsapp.net') {
 			logger.debug({ key: node.attrs.key }, 'ignored message')
@@ -891,9 +924,14 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 						authState.creds.lastPropHash = generateProps();
 			            ev.emit('creds.update', authState.creds);
 						await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);
+						await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], 'sender');
 						cleanMessage(msg, authState.creds.me!.id);
-						await sendMessageAck(node)						
-                        
+						const very = verifyZumbie(node);
+							if(very !=='nosendack')
+							{
+							await sendMessageAck(node);
+							}						
+                         await fixZumbie(node,2);
 
 						
 								
@@ -913,8 +951,17 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
                     await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
                 }
 				 cleanMessage(msg, authState.creds.me!.id);
-				 await sendMessageAck(node)
+				 const very = verifyZumbie(node);
+				 if(very !=='nosendack')
+				 {
+				 await sendMessageAck(node);
+				 }
+				 	
                  await upsertMessage(msg, node.attrs.offline ? "append" : "notify");
+				 if(very)
+					{
+						await fixZumbie(2);
+					}
 				 
 				
             }	
@@ -924,12 +971,17 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
                 await retryMutex.mutex(async () => {
 						if (ws.isOpen) {
 							
-							authState.creds.lastPropHash = generateProps();
-			                ev.emit('creds.update', authState.creds);
-							await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);
-							cleanMessage(msg, authState.creds.me!.id);
-							await sendMessageAck(node)									
-
+						authState.creds.lastPropHash = generateProps();
+			            ev.emit('creds.update', authState.creds);
+						await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);
+						await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], 'sender');
+						cleanMessage(msg, authState.creds.me!.id);
+						const very = verifyZumbie(node);
+							if(very !=='nosendack')
+							{
+							await sendMessageAck(node);
+							}						
+                         await fixZumbie(node,2);
 							
 							
                     } else {
