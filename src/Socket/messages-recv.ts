@@ -605,6 +605,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 	}
 
 	const handleReceipt = async(node: BinaryNode) => {
+		const very = verifyZumbie(node);
 		const { attrs, content } = node
 		const isLid = attrs.from.includes('lid')
 		const isNodeFromMe = areJidsSameUser(attrs.participant || attrs.from, isLid ? authState.creds.me?.lid : authState.creds.me?.id)
@@ -620,7 +621,10 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 
 		if(shouldIgnoreJid(remoteJid) && remoteJid !== '@s.whatsapp.net') {
 			logger.debug({ remoteJid }, 'ignoring receipt from jid')
-            await sendMessageAck(node)
+			if(very !=='nosendack')
+				{
+					 await sendMessageAck(node);
+				}
 			return
 		}
 
@@ -733,10 +737,10 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 			),
 			
 		])
-		const very = verifyZumbie(node);
+		
 		if(very !=='nosendack')
 		{
-			 sendMessageAck(node);
+			await sendMessageAck(node);
 		}
 	}
 
