@@ -120,22 +120,43 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 			}
 		}
 
-		if(!!attrs.participant) {
-			stanza.attrs.participant = attrs.participant
-		}
+		if (!!attrs.participant) {
+            stanza.attrs.participant = attrs.participant;
+        }
+        if (!!attrs.participant_lid) {
+            stanza.attrs.participant_lid = attrs.participant_lid;
+        }
+        if (!!attrs.recipient) {
+            stanza.attrs.recipient = attrs.recipient;
+        }
+        if (!!attrs.notify) {
+            stanza.attrs.notify = attrs.notify;
+        }
+        if (!!attrs.verified_name) {
+            stanza.attrs.verified_name = attrs.verified_name;
+        }
+        if (!!attrs.offline) {
+            stanza.attrs.offline = attrs.offline;
+        }
+        if (!!attrs.verified_level) {
+            if(attrs.verified_level=='unknown')
+            {
+                attrs.verified_level ='low';
+            }
+            stanza.attrs.verified_level = attrs.verified_level;
+        }
+        if (!!attrs.sender_lid) {
+            stanza.attrs.sender_lid = attrs.sender_lid;
+            stanza.attrs.to = attrs.sender_lid;
+        }
 
-		if(!!attrs.recipient) {
-			stanza.attrs.recipient = attrs.recipient
-		}
-
-
-    		if(!!attrs.type && (tag !== 'message' || getBinaryNodeChild({ tag, attrs, content }, 'unavailable'))) {
+    	if(!!attrs.type && (tag !== 'message' || getBinaryNodeChild({ tag, attrs, content }, 'unavailable'))) {
       			stanza.attrs.type = attrs.type
-    		}
+    	}
 
-    		if(tag === 'message' && getBinaryNodeChild({ tag, attrs, content }, 'unavailable')) {
+    	if(tag === 'message' && getBinaryNodeChild({ tag, attrs, content }, 'unavailable')) {
       			stanza.attrs.from = authState.creds.me!.id
-    		}
+    	}
 
 		logger.debug({ recv: { tag, attrs }, sent: stanza.attrs }, 'sent ack')
 		await sendNode(stanza)
@@ -811,67 +832,10 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 	};
 	
 
-	const fixZumbie = async (node, limit = 5) => {
-		try {
-			const verify = verifyZumbie(node);
-			if(!verify)
-			{
-				return;
-			}
-			logger.error("Mensagem bugada detectada, iniciando o procedimento anti trava/recuperação do socket, refazendo o props");
-			let attempts = 0;
-			
-			 ev.flush(); ///iniciando limpando os eventos
-			
-			// Vamos forçar a recriação da hash de props para reestabelecer o socket e reconstruir o creds.
-			authState.creds.lastPropHash = generateProps();
-			ev.emit('creds.update', authState.creds);
-			await delay(1000);     
-
-			while (attempts < limit) {
-				           
-               const timestampAtual = Math.floor(Date.now() / 1000);
-				
-				
-				if(attempts>2)
-				{
-				node.attrs.from = jidNormalizedUser(node.attrs.from);
-				node.attrs.t =  timestampAtual;
-				}
-				await sendReceipt(node.attrs.from, node.attrs.participant, [node.attrs.id], 'sender');
-				await sendReceipt(node.attrs.from, node.attrs.participant, [node.attrs.id], 'read');
-			    if(verify=='sendack')
-				{				
-				await sendMessageAck(node);
-				}
-				
-				
-			
-			    await delay(1000);			
-
-				
-			  attempts++; 
-			}
-			
-				const name = 'regular' as WAPatchName
-				await resyncAppState([name], false)
-				if (authState.creds.processedHistoryMessages) {
-					delete authState.creds.processedHistoryMessages;
-				}
-				authState.creds.lastPropHash = generateProps();
-				ev.emit('creds.update', authState.creds);
-			
-			    ev.flush();
-			
-
-		} catch (err) {
-			logger.debug('Falha ao consultar o hash');
-		}
-	};
+	
 
 
-	const handleMessage = async(node: BinaryNode) => {
-		
+	const handleMessage = async(node: BinaryNode) => {		
 		
 
 		if(shouldIgnoreJid(node.attrs.from!) && node.attrs.from! !== '@s.whatsapp.net') {
@@ -921,21 +885,19 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
             // Verifica se a mensagem falhou ao descriptografar
             if (msg.messageStubType === proto.WebMessageInfo.StubType.CIPHERTEXT) {
                 await retryMutex.mutex(async () => {
-                    if (ws.isOpen) {					
+                    if (ws.isOpen) {				
 						
-						
-						authState.creds.lastPropHash = generateProps();
-			            ev.emit('creds.update', authState.creds);
 						await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);
-						await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], 'sender');
-						cleanMessage(msg, authState.creds.me!.id);
-						const very = verifyZumbie(node);
-							if(very !=='nosendack')
-							{
-							await sendMessageAck(node);
-							}						
-                         await fixZumbie(node);
+						const isAnyHistoryMsg = getHistoryMsg(msg.message!);
+						if (isAnyHistoryMsg) {
+							const jid = jidNormalizedUser(msg.key.remoteJid!);
+							await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
+						}
+						 cleanMessage(msg, authState.creds.me!.id);
 
+						await sendMessageAck(node);
+						 ev.flush();
+					
 						
 								
 
@@ -945,26 +907,19 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
                 });
             } else {                
 				
-                await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);
-
-                // Verifica se é uma mensagem de histórico
+                await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);                
                 const isAnyHistoryMsg = getHistoryMsg(msg.message!);
                 if (isAnyHistoryMsg) {
                     const jid = jidNormalizedUser(msg.key.remoteJid!);
                     await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
                 }
 				 cleanMessage(msg, authState.creds.me!.id);
-				 const very = verifyZumbie(node);
-				 if(very !=='nosendack')
-				 {
+				 
 				 await sendMessageAck(node);
-				 }
+				
 				 	
                  await upsertMessage(msg, node.attrs.offline ? "append" : "notify");
-				 if(very)
-					{
-						await fixZumbie(node,2);
-					}
+				 
 				 
 				
             }	
@@ -974,17 +929,16 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
                 await retryMutex.mutex(async () => {
 						if (ws.isOpen) {
 							
-						authState.creds.lastPropHash = generateProps();
-			            ev.emit('creds.update', authState.creds);
-						await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);
-						await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], 'sender');
-						cleanMessage(msg, authState.creds.me!.id);
-						const very = verifyZumbie(node);
-							if(very !=='nosendack')
-							{
+							await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);
+							const isAnyHistoryMsg = getHistoryMsg(msg.message!);
+							if (isAnyHistoryMsg) {
+								const jid = jidNormalizedUser(msg.key.remoteJid!);
+								await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
+							}
+							 cleanMessage(msg, authState.creds.me!.id);
+	
 							await sendMessageAck(node);
-							}						
-                         await fixZumbie(node,2);
+							 ev.flush();
 							
 							
                     } else {
