@@ -112,11 +112,6 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 
 	const sendMessageAck = async({ tag, attrs, content }: BinaryNode) => {
 
-		if(attrs.type=='w:gp2')
-			{
-			   return;
-			}
-
 
 		const stanza: BinaryNode = {
 			tag: 'ack',
@@ -129,21 +124,11 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 
 		if (!!attrs.participant) {
             stanza.attrs.participant = attrs.participant;
-        }
-        if (!!attrs.participant_lid) {
-            stanza.attrs.participant_lid = attrs.participant_lid;
-        }
+        }       
         if (!!attrs.recipient) {
             stanza.attrs.recipient = attrs.recipient;
-        }       
-        
-        if (!!attrs.verified_level) {
-            if(attrs.verified_level=='unknown')
-            {
-                attrs.verified_level ='low';
-            }
-            stanza.attrs.verified_level = attrs.verified_level;
-        }
+        }      
+               
         if (!!attrs.sender_lid) {
             stanza.attrs.sender_lid = attrs.sender_lid;
             stanza.attrs.to = attrs.sender_lid;
@@ -156,6 +141,12 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
     	if(tag === 'message' && getBinaryNodeChild({ tag, attrs, content }, 'unavailable')) {
       			stanza.attrs.from = authState.creds.me!.id
     	}
+
+		if(tag=='call')
+			{
+				stanza.attrs.to = attrs.from;
+				delete stanza.attrs.sender_lid;
+			}
 
 		logger.debug({ recv: { tag, attrs }, sent: stanza.attrs }, 'sent ack')
 		await sendNode(stanza)
