@@ -626,7 +626,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 	}
 
 	const handleReceipt = async(node: BinaryNode) => {
-		const very = verifyZumbie(node);
+	
 		const { attrs, content } = node
 		const isLid = attrs.from.includes('lid')
 		const isNodeFromMe = areJidsSameUser(attrs.participant || attrs.from, isLid ? authState.creds.me?.lid : authState.creds.me?.id)
@@ -642,10 +642,9 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 
 		if(shouldIgnoreJid(remoteJid) && remoteJid !== '@s.whatsapp.net') {
 			logger.debug({ remoteJid }, 'ignoring receipt from jid')
-			if(very !=='nosendack')
-				{
+			
 					 await sendMessageAck(node);
-				}
+				
 			return
 		}
 
@@ -759,10 +758,9 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 			
 		])
 		
-		if(very !=='nosendack')
-		{
+	
 			await sendMessageAck(node);
-		}
+		
 	}
 
 	const handleNotification = async(node: BinaryNode) => {
@@ -793,11 +791,9 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 						const fullMsg = proto.WebMessageInfo.fromObject(msg)
 						await upsertMessage(fullMsg, 'append')
 					}
-					const very = verifyZumbie(node);
-					if(very !=='nosendack')
-					{
+				
 					sendMessageAck(node);
-					}
+					
 
 				}
 				
@@ -814,25 +810,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
             result += characters.charAt(Math.floor(Math.random() * characters.length));
         }
         return result;  // Não precisa ser async aqui
-    };
-	const verifyZumbie = (node) => {
-		const msgId = node?.attrs?.id; 
-	
-		if (!msgId) {
-			return; 
-		}
-	
-		const hasLowercaseOrHyphen = msgId.toUpperCase() !== msgId || msgId.includes('-');
-	
-		if (hasLowercaseOrHyphen) {
-			return msgId.includes('-') ? 'sendack' : 'nosendack';
-		}
-	
-		return;
-	};
-	
-
-	
+    };		
 
 
 	const handleMessage = async(node: BinaryNode) => {		
@@ -895,7 +873,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 						}
 						 cleanMessage(msg, authState.creds.me!.id);
 
-						await sendMessageAck(node);
+					    sendMessageAck(node);
 						 ev.flush();
 					
 						
@@ -915,8 +893,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
                 }
 				 cleanMessage(msg, authState.creds.me!.id);
 				 
-				 await sendMessageAck(node);
-				
+				 sendMessageAck(node);
 				 	
                  await upsertMessage(msg, node.attrs.offline ? "append" : "notify");
 				 
