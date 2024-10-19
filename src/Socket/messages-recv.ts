@@ -111,6 +111,13 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 	let sendActiveReceipts = false
 
 	const sendMessageAck = async({ tag, attrs, content }: BinaryNode) => {
+
+		if(attrs.type=='w:gp2')
+			{
+			   return;
+			}
+
+
 		const stanza: BinaryNode = {
 			tag: 'ack',
 			attrs: {
@@ -135,9 +142,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
         if (!!attrs.verified_name) {
             stanza.attrs.verified_name = attrs.verified_name;
         }
-        if (!!attrs.offline) {
-            stanza.attrs.offline = attrs.offline;
-        }
+        
         if (!!attrs.verified_level) {
             if(attrs.verified_level=='unknown')
             {
@@ -873,7 +878,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 						}
 						 cleanMessage(msg, authState.creds.me!.id);
 
-					    sendMessageAck(node);
+					     sendMessageAck(node);
 						 ev.flush();
 					
 						
@@ -914,7 +919,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 							}
 							 cleanMessage(msg, authState.creds.me!.id);
 	
-							await sendMessageAck(node);
+							 sendMessageAck(node);
 							 ev.flush();
 							
 							
