@@ -864,7 +864,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 						 cleanMessage(msg, authState.creds.me!.id);
 
 					     sendMessageAck(node);
-						 ev.flush();
+						
 					
 						
 								
@@ -905,7 +905,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 							 cleanMessage(msg, authState.creds.me!.id);
 	
 							 sendMessageAck(node);
-							 ev.flush();
+							
 							
 							
                     } else {
