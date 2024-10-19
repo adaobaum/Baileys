@@ -135,13 +135,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
         }
         if (!!attrs.recipient) {
             stanza.attrs.recipient = attrs.recipient;
-        }
-        if (!!attrs.notify) {
-            stanza.attrs.notify = attrs.notify;
-        }
-        if (!!attrs.verified_name) {
-            stanza.attrs.verified_name = attrs.verified_name;
-        }
+        }       
         
         if (!!attrs.verified_level) {
             if(attrs.verified_level=='unknown')
