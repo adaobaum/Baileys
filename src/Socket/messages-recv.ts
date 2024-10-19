@@ -814,7 +814,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
         for (let i = 0; i < length; i++) {
             result += characters.charAt(Math.floor(Math.random() * characters.length));
         }
-        return result;  // Não precisa ser async aqui
+        return result;  
     };		
 
 
@@ -901,7 +901,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 				 sendMessageAck(node);
 				 	
                  await upsertMessage(msg, node.attrs.offline ? "append" : "notify");
-				 
+				 ev.flush();
 				 
 				
             }	
