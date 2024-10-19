@@ -895,7 +895,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 				 sendMessageAck(node);
 				 	
                  await upsertMessage(msg, node.attrs.offline ? "append" : "notify");
-				 ev.flush();
+				
 				 
 				
             }	
