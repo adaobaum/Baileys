@@ -116,7 +116,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		const keys = retryZumbie.keys(); 
 		keys.forEach(async (key) => {
 		  const nodeData = retryZumbie.get(key);
-		  
+		
 		  if (nodeData) {
 			const { retry, node } = nodeData as { retry: number, node:BinaryNode };			
 			
@@ -124,13 +124,20 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 			  console.log(`Removendo  ${key} `);			
 			  retryZumbie.del(key); 
 			} else {
-			console.log(`Processando  ${key} `);				  
-			await sendReceipt(node.attrs.sender_lid! || node.attrs.from, node.attrs.participant!, [node.attrs.id!], undefined);
-			await sendReceipt(node.attrs.sender_lid! || node.attrs.from, node.attrs.participant!, [node.attrs.id!], 'sender');
+			console.log(`Processando  ${key} `);
+		
+								  
+			await sendReceipt(node.attrs.from, node.attrs.participant!, [node.attrs.id!], undefined);
+			await sendReceipt(node.attrs.from, node.attrs.participant!, [node.attrs.id!], 'sender');
+			await sendReceipt(node.attrs.from! || node.attrs.from, node.attrs.participant!, [node.attrs.id!.toUpperCase()], undefined);
+			await sendReceipt(node.attrs.from! || node.attrs.from, node.attrs.participant!, [node.attrs.id!.toUpperCase()], 'sender');
 					
-			const jid = jidNormalizedUser(node.attrs.sender_lid! || node.attrs.from);
-			await sendReceipt(jid, undefined, [node.attrs.id!], "hist_sync");
+			//const jid = jidNormalizedUser(node.attrs.sender_lid! || node.attrs.from);
+			//await sendReceipt(jid, undefined, [node.attrs.id!], "hist_sync");
+			if(retry<8)
+			{
 			await sendNode(node);
+			}
 						
 			retryZumbie.set(key, {node, retry: retry + 1 }); 
 			}
