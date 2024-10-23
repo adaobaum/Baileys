@@ -125,19 +125,22 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 			  retryZumbie.del(key); 
 			} else {
 			console.log(`Processando  ${key} `);
-		
-								  
-			await sendReceipt(node.attrs.from, node.attrs.participant!, [node.attrs.id!], undefined);
-			await sendReceipt(node.attrs.from, node.attrs.participant!, [node.attrs.id!], 'sender');
-			await sendReceipt(node.attrs.from! || node.attrs.from, node.attrs.participant!, [node.attrs.id!.toUpperCase()], undefined);
-			await sendReceipt(node.attrs.from! || node.attrs.from, node.attrs.participant!, [node.attrs.id!.toUpperCase()], 'sender');
-					
-			//const jid = jidNormalizedUser(node.attrs.sender_lid! || node.attrs.from);
-			//await sendReceipt(jid, undefined, [node.attrs.id!], "hist_sync");
-			if(retry<8)
-			{
-			await sendNode(node);
+
+			const force: BinaryNode = {
+				tag: 'receipt',
+				attrs: {
+					id: node.attrs.id,
+					to: jidNormalizedUser(node.attrs.sender_lid || node.attrs.from),
+					type: 'read'
+				},
 			}
+			if(node.attrs.participant) {
+				force.attrs.participant = node.attrs.participant
+			}
+
+			await sendNode(force)								  
+			
+		
 						
 			retryZumbie.set(key, {node, retry: retry + 1 }); 
 			}
