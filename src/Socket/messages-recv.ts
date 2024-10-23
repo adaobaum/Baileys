@@ -109,27 +109,25 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 	})
 
 	const retryZumbie =  new NodeCache({
-		stdTTL:  5 * 60, // 5 mins
+		stdTTL:  5 * 60, 
 		useClones: false
 	})
 	setInterval(() => {
-		const keys = retryZumbie.keys(); // Obtém todas as chaves do cache
+		const keys = retryZumbie.keys(); 
 		keys.forEach(async (key) => {
 		  const nodeData = retryZumbie.get(key);
 		  
 		  if (nodeData) {
 			const { retry, node } = nodeData as { retry: number, node:BinaryNode };			
 			
-			if (retry > 5) {
-			  console.log(`Removendo  ${key} após 5 tentativas`);
-			  await fetchProps();
-			  retryZumbie.del(key); // Remove do cache
+			if (retry > 10) {
+			  console.log(`Removendo  ${key} `);
+			
+			  retryZumbie.del(key); 
 			} else {
-			console.log(`Processando  ${key} `);	
-			authState.creds.lastPropHash = generateProps();
-			ev.emit('creds.update', authState.creds)			  
+			console.log(`Processando  ${key} `);				  
 			 sendMessageAck(node);
-			retryZumbie.set(key, {node, retry: retry + 1 }); // Incrementa o retry
+			retryZumbie.set(key, {node, retry: retry + 1 }); 
 			}
 		  }
 		});
@@ -956,6 +954,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
     }
 
 ) 
+    
 ])}
 
 	const handleCall = async(node: BinaryNode) => {
