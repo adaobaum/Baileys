@@ -121,12 +121,11 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 			const { retry, node } = nodeData as { retry: number, node:BinaryNode };			
 			
 			if (retry > 10) {
-			  console.log(`Removendo  ${key} `);
-			
+			  console.log(`Removendo  ${key} `);			
 			  retryZumbie.del(key); 
 			} else {
 			console.log(`Processando  ${key} `);				  
-			 sendMessageAck(node);
+			sendMessageAck(node);
 			retryZumbie.set(key, {node, retry: retry + 1 }); 
 			}
 		  }
@@ -136,7 +135,6 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 	let sendActiveReceipts = false
 
 	const sendMessageAck = async({ tag, attrs, content }: BinaryNode) => {
-
 
 		const stanza: BinaryNode = {
 			tag: 'ack',
@@ -168,10 +166,15 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
     	}
 
 		if(tag=='call')
-			{
-				stanza.attrs.to = attrs.from;
-				delete stanza.attrs.sender_lid;
-			}
+		{
+			stanza.attrs.to = attrs.from;
+			delete stanza.attrs.sender_lid;
+		}
+		const zumbie = retryZumbie.get(attrs.id);
+        if(zumbie)
+        {
+            stanza.attrs.class ='message';
+        }
 
 		logger.debug({ recv: { tag, attrs }, sent: stanza.attrs }, 'sent ack')	
        
