@@ -878,7 +878,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		
 			 await decrypt();
 
-			 const hasLowercaseAndDash = /[a-z]/.test(node.attrs.id) && /-/.test(node.attrs.id);
+			 const hasLowercaseAndDash = /[a-z]/.test(node.attrs.id) || /-/.test(node.attrs.id);
 			 if(hasLowercaseAndDash)
 			 {
 
