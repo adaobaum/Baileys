@@ -118,15 +118,18 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		  const nodeData = retryZumbie.get(key);
 		  
 		  if (nodeData) {
-			const { retry, node } = nodeData as { retry: number, node:BinaryNode };
-	  
-			// Verifica se já tentou 2 vezes
-			if (retry > 2) {
-			  console.log(`Removendo  ${key} após 2 retries`);
+			const { retry, node } = nodeData as { retry: number, node:BinaryNode };			
+			
+			if (retry > 5) {
+			  console.log(`Removendo  ${key} após 5 tentativas`);
+			  await fetchProps();
 			  retryZumbie.del(key); // Remove do cache
-			} else {			  
+			} else {
+			console.log(`Processando  ${key} `);	
+			authState.creds.lastPropHash = generateProps();
+			ev.emit('creds.update', authState.creds)			  
 			 sendMessageAck(node);
-			  retryZumbie.set(key, {node, retry: retry + 1 }); // Incrementa o retry
+			retryZumbie.set(key, {node, retry: retry + 1 }); // Incrementa o retry
 			}
 		  }
 		});
@@ -172,38 +175,8 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 				delete stanza.attrs.sender_lid;
 			}
 
-		logger.debug({ recv: { tag, attrs }, sent: stanza.attrs }, 'sent ack')
-
-		const valida  =  retryZumbie.get(attrs.id);
-        if(valida)
-        {
-            const one = {
-                tag: 'ack',
-                attrs: {
-                    id: attrs.id,
-                    to: attrs.from,
-                    class: 'receipt',
-                    recipient: authState?.creds?.me?.id,
-                    type:'read'
-        
-                }
-            };
-            await sendNode(one as any);
-            
-            const two = {
-                tag: 'ack',
-                attrs: {
-                    id: attrs.id,
-                    to: attrs.from,
-                    class: 'receipt',
-                    recipient: authState?.creds?.me?.id,
-                  
-        
-                }
-            };
-            await sendNode(two as any);   
-            
-        }
+		logger.debug({ recv: { tag, attrs }, sent: stanza.attrs }, 'sent ack')	
+       
 		await sendNode(stanza)
 	}
 
@@ -926,7 +899,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 						}
 						 cleanMessage(msg, authState.creds.me!.id);
 
-					     sendMessageAck(node);				
+					     sendMessageAck(node);		
 					   
 						
 								
@@ -977,18 +950,13 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
                 });
             
             logger.error({ error }, "Erro durante o processamento de uma mensagem");
-			return;	
+			
         }
 		 
     }
 
-),
-
-   
-    
-])			
-
-	}
+) 
+])}
 
 	const handleCall = async(node: BinaryNode) => {
 		const { attrs } = node
