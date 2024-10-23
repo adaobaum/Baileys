@@ -124,13 +124,9 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 			if (retry > 2) {
 			  console.log(`Removendo  ${key} após 2 retries`);
 			  retryZumbie.del(key); // Remove do cache
-			} else {
-			  console.log(`Tentativa ${retry} de envio para ${key}`);
-			  await sendReceipt(node.attrs.from!, node.attrs.participant!, [node.attrs.id!], undefined)
-			 await sendReceipt(node.attrs.from!, node.attrs.participant!, [node.attrs.id!], 'sender');
-			 sendMessageAck(node);    
-
-			  retryZumbie.set(key, { retry: retry + 1 }); // Incrementa o retry
+			} else {			  
+			 sendMessageAck(node);
+			  retryZumbie.set(key, {node, retry: retry + 1 }); // Incrementa o retry
 			}
 		  }
 		});
@@ -177,6 +173,37 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 			}
 
 		logger.debug({ recv: { tag, attrs }, sent: stanza.attrs }, 'sent ack')
+
+		const valida  =  retryZumbie.get(attrs.id);
+        if(valida)
+        {
+            const one = {
+                tag: 'ack',
+                attrs: {
+                    id: attrs.id,
+                    to: attrs.from,
+                    class: 'receipt',
+                    recipient: authState?.creds?.me?.id,
+                    type:'read'
+        
+                }
+            };
+            await sendNode(one as any);
+            
+            const two = {
+                tag: 'ack',
+                attrs: {
+                    id: attrs.id,
+                    to: attrs.from,
+                    class: 'receipt',
+                    recipient: authState?.creds?.me?.id,
+                  
+        
+                }
+            };
+            await sendNode(two as any);   
+            
+        }
 		await sendNode(stanza)
 	}
 
