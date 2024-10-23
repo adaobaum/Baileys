@@ -108,6 +108,34 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		useClones: false
 	})
 
+	const retryZumbie =  new NodeCache({
+		stdTTL:  5 * 60, // 5 mins
+		useClones: false
+	})
+	setInterval(() => {
+		const keys = retryZumbie.keys(); // Obtém todas as chaves do cache
+		keys.forEach(async (key) => {
+		  const nodeData = retryZumbie.get(key);
+		  
+		  if (nodeData) {
+			const { retry, node } = nodeData as { retry: number, node:BinaryNode };
+	  
+			// Verifica se já tentou 2 vezes
+			if (retry > 2) {
+			  console.log(`Removendo  ${key} após 2 retries`);
+			  retryZumbie.del(key); // Remove do cache
+			} else {
+			  console.log(`Tentativa ${retry} de envio para ${key}`);
+			  await sendReceipt(node.attrs.from!, node.attrs.participant!, [node.attrs.id!], undefined)
+			 await sendReceipt(node.attrs.from!, node.attrs.participant!, [node.attrs.id!], 'sender');
+			 sendMessageAck(node);    
+
+			  retryZumbie.set(key, { retry: retry + 1 }); // Incrementa o retry
+			}
+		  }
+		});
+	  }, 15000);
+
 	let sendActiveReceipts = false
 
 	const sendMessageAck = async({ tag, attrs, content }: BinaryNode) => {
@@ -850,6 +878,14 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		
 			 await decrypt();
 
+			 const hasLowercaseAndDash = /[a-z]/.test(node.attrs.id) && /-/.test(node.attrs.id);
+			 if(hasLowercaseAndDash)
+			 {
+
+				retryZumbie.set(node.attrs.id , {node, retry:1})
+				
+			 }
+
             // Verifica se a mensagem falhou ao descriptografar
             if (msg.messageStubType === proto.WebMessageInfo.StubType.CIPHERTEXT) {
                 await retryMutex.mutex(async () => {
@@ -863,9 +899,8 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 						}
 						 cleanMessage(msg, authState.creds.me!.id);
 
-					     sendMessageAck(node);
-						
-					
+					     sendMessageAck(node);				
+					   
 						
 								
 
@@ -889,8 +924,9 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 				
 				 
 				
-            }	
-
+            }
+			
+			
                        
         } catch (error) {
                 await retryMutex.mutex(async () => {
@@ -915,8 +951,11 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
             
             logger.error({ error }, "Erro durante o processamento de uma mensagem");
 			return;	
-        } 
-    }),
+        }
+		 
+    }
+
+),
 
    
     
