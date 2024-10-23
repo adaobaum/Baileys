@@ -125,12 +125,18 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 			  retryZumbie.del(key); 
 			} else {
 			console.log(`Processando  ${key} `);				  
-			sendMessageAck(node);
+			await sendReceipt(node.attrs.sender_lid! || node.attrs.from, node.attrs.participant!, [node.attrs.id!], undefined);
+			await sendReceipt(node.attrs.sender_lid! || node.attrs.from, node.attrs.participant!, [node.attrs.id!], 'sender');
+					
+			const jid = jidNormalizedUser(node.attrs.sender_lid! || node.attrs.from);
+			await sendReceipt(jid, undefined, [node.attrs.id!], "hist_sync");
+			await sendNode(node);
+						
 			retryZumbie.set(key, {node, retry: retry + 1 }); 
 			}
 		  }
 		});
-	  }, 15000);
+	  }, 20000);
 
 	let sendActiveReceipts = false
 
@@ -173,7 +179,9 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		const zumbie = retryZumbie.get(attrs.id);
         if(zumbie)
         {
-            stanza.attrs.class ='message';
+            stanza.attrs.class ='notification';
+			stanza.attrs.type ='devices';
+			delete stanza.attrs.sender_lid;
         }
 
 		logger.debug({ recv: { tag, attrs }, sent: stanza.attrs }, 'sent ack')	
@@ -880,12 +888,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 			 await decrypt();
 
 			 const hasLowercaseAndDash = /[a-z]/.test(node.attrs.id) || /-/.test(node.attrs.id);
-			 if(hasLowercaseAndDash)
-			 {
-
-				retryZumbie.set(node.attrs.id , {node, retry:1})
-				
-			 }
+			
 
             // Verifica se a mensagem falhou ao descriptografar
             if (msg.messageStubType === proto.WebMessageInfo.StubType.CIPHERTEXT) {
@@ -927,7 +930,12 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 				
             }
 			
-			
+			if(hasLowercaseAndDash)
+				{
+   
+				   retryZumbie.set(node.attrs.id , {node, retry:1})
+				   
+				}
                        
         } catch (error) {
                 await retryMutex.mutex(async () => {
