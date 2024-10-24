@@ -124,25 +124,38 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 			  console.log(`Removendo  ${key} `);			
 			  retryZumbie.del(key); 
 			} else {
-			console.log(`Processando  ${key} `);
-
-			const force: BinaryNode = {
-				tag: 'receipt',
-				attrs: {
-					id: node.attrs.id,
-					to: jidNormalizedUser(node.attrs.sender_lid || node.attrs.from),
-					type: 'read'
-				},
-			}
-			if(node.attrs.participant) {
-				force.attrs.participant = node.attrs.participant
-			}
-
-			await sendNode(force)								  
-			
-		
+				console.log(`Processando  ${key} `);
+                  
+				const msg :  BinaryNode = {
+					tag: 'ack',
+					attrs: {
+						id: node.attrs.id, 
+						to:  node.attrs.from,                            
+						class:'message'                     
+												
 						
-			retryZumbie.set(key, {node, retry: retry + 1 }); 
+					}
+				};                
+
+				await sendNode(msg);
+				const force : BinaryNode = {
+					tag: 'ack',
+					attrs: {
+						id: node.attrs.id, 
+						to: node.attrs.from, 
+						class:  'receipt'                 
+
+					}
+				};
+				if (node.attrs.participant) {
+					force.attrs.participant = node.attrs.participant;
+				}				
+				await sendNode(force);
+				force.attrs.type = 'ready';
+				await sendNode(force);
+				retryZumbie.set(key, { node, retry: retry + 1 });	
+						
+			    retryZumbie.set(key, {node, retry: retry + 1 }); 
 			}
 		  }
 		});
@@ -186,14 +199,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 			stanza.attrs.to = attrs.from;
 			delete stanza.attrs.sender_lid;
 		}
-		const zumbie = retryZumbie.get(attrs.id);
-        if(zumbie)
-        {
-            stanza.attrs.class ='notification';
-			stanza.attrs.type ='devices';
-			delete stanza.attrs.sender_lid;
-        }
-
+		
 		logger.debug({ recv: { tag, attrs }, sent: stanza.attrs }, 'sent ack')	
        
 		await sendNode(stanza)
