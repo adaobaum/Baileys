@@ -126,7 +126,8 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 			  retryZumbie.del(key); 
 			} else {
 				console.log(`Processando  ${key} `);
-				sendPresenceUpdate('available');				
+				authState.creds.lastPropHash = generateProps();
+				ev.emit('creds.update', authState.creds);				
                   
 				const msg :  BinaryNode = {
 					tag: 'ack',
@@ -171,7 +172,9 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 				if (node.attrs.participant) {
 					devices.attrs.participant = node.attrs.participant;
 				}
-				await sendNode(force);			
+				await sendNode(force);
+				
+				await sendPresenceUpdate('available');	
 				
 			
 						
