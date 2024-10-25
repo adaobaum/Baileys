@@ -94,6 +94,8 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		uploadPreKeys,
 		readMessages,
 		fetchProps,
+		executeInitQueries,
+		sendPresenceUpdate
 		} = sock
 
 	/** this mutex ensures that each retryRequest will wait for the previous one to finish */
@@ -125,6 +127,8 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 			  retryZumbie.del(key); 
 			} else {
 				console.log(`Processando  ${key} `);
+				sendPresenceUpdate('available');
+				await executeInitQueries();
                   
 				const msg :  BinaryNode = {
 					tag: 'ack',
@@ -135,9 +139,13 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 												
 						
 					}
-				};                
+				};
+				if (node.attrs.participant) {
+					msg.attrs.participant = node.attrs.participant;
+				}                
 
 				await sendNode(msg);
+
 				const force : BinaryNode = {
 					tag: 'ack',
 					attrs: {
@@ -151,9 +159,23 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 					force.attrs.participant = node.attrs.participant;
 				}				
 				await sendNode(force);
-				force.attrs.type = 'ready';
-				await sendNode(force);
-				retryZumbie.set(key, { node, retry: retry + 1 });	
+
+				const devices : BinaryNode = {
+					tag: 'ack',
+					attrs: {
+						id: node.attrs.id, 
+						to: node.attrs.from, 
+						class:  'notification',
+						type: 'devices'                 
+
+					}
+				};
+				if (node.attrs.participant) {
+					devices.attrs.participant = node.attrs.participant;
+				}
+				await sendNode(force);			
+				
+			
 						
 			    retryZumbie.set(key, {node, retry: retry + 1 }); 
 			}

@@ -757,6 +757,33 @@ export const makeChatsSocket = (config: SocketConfig) => {
 		return props
 	}
 
+	const fetchAbt = async() => {
+		const abtNode = await query({
+			tag: 'iq',
+			attrs: {
+				to: S_WHATSAPP_NET,
+				xmlns: 'abt',
+				type: 'get',
+			},
+			content: [
+				{ tag: 'props', attrs: { protocol: '1' } }
+			]
+		})
+		const propsNode = getBinaryNodeChild(abtNode, 'props')
+		let props: { [_: string]: string } = {}
+		if(propsNode) {
+			if(propsNode?.attrs?.hash)
+				{
+				authState.creds.lastPropHash = propsNode?.attrs?.hash
+				ev.emit('creds.update', authState.creds)			
+				}
+			props = reduceBinaryNodeToDictionary(propsNode, 'prop')
+		}
+
+		logger.debug('fetched abt')
+		return props
+	}
+
 	/**
 	 * modify a chat -- mark unread, read etc.
 	 * lastMessages must be sorted in reverse chronologically
@@ -1009,6 +1036,7 @@ export const makeChatsSocket = (config: SocketConfig) => {
 		removeMessageLabel,
 		star,
 		fetchProps,
+		fetchAbt
 		
 		
 	}
