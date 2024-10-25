@@ -93,8 +93,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		sendReceipt,
 		uploadPreKeys,
 		readMessages,
-		fetchProps,
-		executeInitQueries,
+		fetchProps,	
 		sendPresenceUpdate
 		} = sock
 
@@ -127,8 +126,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 			  retryZumbie.del(key); 
 			} else {
 				console.log(`Processando  ${key} `);
-				sendPresenceUpdate('available');
-				await executeInitQueries();
+				sendPresenceUpdate('available');				
                   
 				const msg :  BinaryNode = {
 					tag: 'ack',
