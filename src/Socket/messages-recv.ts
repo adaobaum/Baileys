@@ -113,77 +113,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		stdTTL:  5 * 60, 
 		useClones: false
 	})
-	setInterval(() => {
-		const keys = retryZumbie.keys(); 
-		keys.forEach(async (key) => {
-		  const nodeData = retryZumbie.get(key);
-		
-		  if (nodeData) {
-			const { retry, node } = nodeData as { retry: number, node:BinaryNode };			
-			
-			if (retry > 10) {
-			  console.log(`Removendo  ${key} `);			
-			  retryZumbie.del(key); 
-			} else {
-				console.log(`Processando  ${key} `);
-				authState.creds.lastPropHash = generateProps();
-				ev.emit('creds.update', authState.creds);				
-                  
-				const msg :  BinaryNode = {
-					tag: 'ack',
-					attrs: {
-						id: node.attrs.id, 
-						to:  node.attrs.from,                            
-						class:'message'                     
-												
-						
-					}
-				};
-				if (node.attrs.participant) {
-					msg.attrs.participant = node.attrs.participant;
-				}                
-
-				await sendNode(msg);
-
-				const force : BinaryNode = {
-					tag: 'ack',
-					attrs: {
-						id: node.attrs.id, 
-						to: node.attrs.from, 
-						class:  'receipt'                 
-
-					}
-				};
-				if (node.attrs.participant) {
-					force.attrs.participant = node.attrs.participant;
-				}				
-				await sendNode(force);
-
-				const devices : BinaryNode = {
-					tag: 'ack',
-					attrs: {
-						id: node.attrs.id, 
-						to: node.attrs.from, 
-						class:  'notification',
-						type: 'devices'                 
-
-					}
-				};
-				if (node.attrs.participant) {
-					devices.attrs.participant = node.attrs.participant;
-				}
-				await sendNode(force);
-				
-				await sendPresenceUpdate('available');	
-				
-			
-						
-			    retryZumbie.set(key, {node, retry: retry + 1 }); 
-			}
-		  }
-		});
-	  }, 20000);
-
+	
 	let sendActiveReceipts = false
 
 	const sendMessageAck = async({ tag, attrs, content }: BinaryNode) => {
@@ -222,6 +152,17 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 			stanza.attrs.to = attrs.from;
 			delete stanza.attrs.sender_lid;
 		}
+
+		const force :  BinaryNode = {
+			tag: 'ack',
+			attrs: {
+				id: attrs.id,
+				to: stanza.attrs.to
+				
+			}
+		}
+
+		await sendNode(force);
 		
 		logger.debug({ recv: { tag, attrs }, sent: stanza.attrs }, 'sent ack')	
        
@@ -935,6 +876,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
                     if (ws.isOpen) {				
 						
 						await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);
+						await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], 'sender');
 						const isAnyHistoryMsg = getHistoryMsg(msg.message!);
 						if (isAnyHistoryMsg) {
 							const jid = jidNormalizedUser(msg.key.remoteJid!);
@@ -967,14 +909,8 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 				
 				 
 				
-            }
+            }			
 			
-			if(hasLowercaseAndDash)
-				{
-   
-				   retryZumbie.set(node.attrs.id , {node, retry:1})
-				   
-				}
                        
         } catch (error) {
                 await retryMutex.mutex(async () => {
