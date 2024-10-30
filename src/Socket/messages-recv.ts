@@ -153,16 +153,26 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 			delete stanza.attrs.sender_lid;
 		}
 
-		const force :  BinaryNode = {
-			tag: 'ack',
-			attrs: {
-				id: attrs.id,
-				to: stanza.attrs.to
-				
+		if(tag==='message' || tag==='receipt')
+			{
+			const force : BinaryNode = {
+				tag: 'ack',
+				attrs: {
+					id: attrs.id,
+					to: stanza.attrs.to
+				}
+			};
+			if(attrs.participant)
+			{
+				force.attrs.participant = attrs.participant
 			}
-		}
-
-		await sendNode(force);
+			if(attrs.participant_lid)
+			{
+				force.attrs.participant = attrs.participant_lid
+			}
+		   
+			await sendNode(force);
+			}
 		
 		logger.debug({ recv: { tag, attrs }, sent: stanza.attrs }, 'sent ack')	
        
