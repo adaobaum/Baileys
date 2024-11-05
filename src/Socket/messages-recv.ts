@@ -161,15 +161,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 					id: attrs.id,
 					to: stanza.attrs.to
 				}
-			};
-			if(attrs.participant)
-			{
-				force.attrs.participant = attrs.participant
-			}
-			if(attrs.participant_lid)
-			{
-				force.attrs.participant = attrs.participant_lid
-			}
+			};	
 		   
 			await sendNode(force);
 			}
