@@ -167,7 +167,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		   
 			await sendNode(force);
 			
-		   console.log('ACK: '+ stanza);
+		 
 		   logger.debug({ recv: { tag, attrs }, sent: stanza.attrs }, 'sent ack')	
        
 		    if(!hasLowercaseAndDash)
