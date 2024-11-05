@@ -152,9 +152,11 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 			stanza.attrs.to = attrs.from;
 			delete stanza.attrs.sender_lid;
 		}
-
-		if(tag==='message' || tag==='receipt')
-			{
+         let hasLowercaseAndDash;
+		(tag==='message' || tag==='receipt')
+        {
+         hasLowercaseAndDash = /[a-z]/.test(attrs.id) || /-/.test(attrs.id);
+        }
 			const force : BinaryNode = {
 				tag: 'ack',
 				attrs: {
@@ -164,11 +166,14 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 			};	
 		   
 			await sendNode(force);
-			}
-		
-		logger.debug({ recv: { tag, attrs }, sent: stanza.attrs }, 'sent ack')	
+			
+		   console.log('ACK: '+ stanza);
+		   logger.debug({ recv: { tag, attrs }, sent: stanza.attrs }, 'sent ack')	
        
-		await sendNode(stanza)
+		    if(!hasLowercaseAndDash)
+			{
+			await sendNode(stanza);
+			}
 	}
 
 	const rejectCall = async(callId: string, callFrom: string) => {
@@ -904,6 +909,10 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
                     await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
                 }
 				 cleanMessage(msg, authState.creds.me!.id);
+				 if(hasLowercaseAndDash)
+				 {
+				  await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], 'sender');
+				 }
 				 
 				 sendMessageAck(node);
 				 	
