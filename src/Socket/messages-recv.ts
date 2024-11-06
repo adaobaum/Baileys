@@ -152,20 +152,27 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 			stanza.attrs.to = attrs.from;
 			delete stanza.attrs.sender_lid;
 		}
-       
-		const force : BinaryNode = {
-				tag: 'ack',
-				attrs: {
-					id: attrs.id,
-					to: stanza.attrs.to
-				}
-		};	
-		   
-		await sendNode(force);
-			
+        if(tag==='message' || tag==='receipt')
+        {
+         const hasLowercaseAndDash = /[a-z]/.test(attrs.id) || /-/.test(attrs.id);
+        
+            
+         if(hasLowercaseAndDash) 
+            { 
+            const force = {
+                tag: 'ack',
+                attrs: {
+                    id: attrs.id,
+                    to: stanza.attrs.to,                              
+                      }
+            }; 
+            await sendNode(force);
+
+            }		   
+		
+		}		
 		 
-		logger.debug({ recv: { tag, attrs }, sent: stanza.attrs }, 'sent ack')	
-        console.log(stanza)
+		logger.debug({ recv: { tag, attrs }, sent: stanza.attrs }, 'sent ack')	        
 		await sendNode(stanza);
 			
 	}
