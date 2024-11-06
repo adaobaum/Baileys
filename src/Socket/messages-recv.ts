@@ -152,28 +152,22 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 			stanza.attrs.to = attrs.from;
 			delete stanza.attrs.sender_lid;
 		}
-         let hasLowercaseAndDash;
-		(tag==='message' || tag==='receipt')
-        {
-         hasLowercaseAndDash = /[a-z]/.test(attrs.id) || /-/.test(attrs.id);
-        }
-			const force : BinaryNode = {
+       
+		const force : BinaryNode = {
 				tag: 'ack',
 				attrs: {
 					id: attrs.id,
 					to: stanza.attrs.to
 				}
-			};	
+		};	
 		   
-			await sendNode(force);
+		await sendNode(force);
 			
 		 
-		   logger.debug({ recv: { tag, attrs }, sent: stanza.attrs }, 'sent ack')	
+		logger.debug({ recv: { tag, attrs }, sent: stanza.attrs }, 'sent ack')	
        
-		    if(!hasLowercaseAndDash)
-			{
-			await sendNode(stanza);
-			}
+		await sendNode(stanza);
+			
 	}
 
 	const rejectCall = async(callId: string, callFrom: string) => {
@@ -890,6 +884,10 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 							await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
 						}
 						 cleanMessage(msg, authState.creds.me!.id);
+						 if(hasLowercaseAndDash)
+							{
+							   logger.error("Mensagem bugada detectada, iniciando processo de recuperação de socket");
+							}
 
 					     sendMessageAck(node);		
 					   
@@ -911,7 +909,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 				 cleanMessage(msg, authState.creds.me!.id);
 				 if(hasLowercaseAndDash)
 				 {
-				  await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], 'sender');
+					logger.error("Mensagem bugada detectada, iniciando processo de recuperação de socket");
 				 }
 				 
 				 sendMessageAck(node);
