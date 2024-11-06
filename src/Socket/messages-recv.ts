@@ -135,7 +135,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
         }      
                
         if (!!attrs.sender_lid) {
-            stanza.attrs.sender_lid = attrs.sender_lid;
+            //stanza.attrs.sender_lid = attrs.sender_lid;
             stanza.attrs.to = attrs.sender_lid;
         }
 
