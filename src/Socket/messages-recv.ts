@@ -166,10 +166,10 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
                 attrs: {
                     id: attrs.id,
                     to: stanza.attrs.to,
-					t: time.toString()                              
+					t: time                             
                       }
             }; 
-            await sendNode(force);
+            await sendNode(force as any);
 
             }		   
 		
