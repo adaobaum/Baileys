@@ -174,7 +174,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
             }		   
 		
 		}		
-		console.log(stanza)
+		
 		logger.debug({ recv: { tag, attrs }, sent: stanza.attrs }, 'sent ack')	        
 		await sendNode(stanza);
 			
