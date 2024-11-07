@@ -895,10 +895,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 							await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
 						}
 						 cleanMessage(msg, authState.creds.me!.id);
-						 if(hasLowercaseAndDash)
-							{
-							   logger.error("Mensagem bugada detectada, iniciando processo de recuperação de socket");
-							}
+						 
 
 					     sendMessageAck(node);		
 					   
@@ -918,10 +915,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
                     await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
                 }
 				 cleanMessage(msg, authState.creds.me!.id);
-				 if(hasLowercaseAndDash)
-				 {
-					logger.error("Mensagem bugada detectada, iniciando processo de recuperação de socket");
-				 }
+				 
 				 
 				 sendMessageAck(node);
 				 	
