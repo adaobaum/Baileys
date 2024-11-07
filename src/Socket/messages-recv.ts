@@ -135,7 +135,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
         }      
                
         if (!!attrs.sender_lid) {
-            //stanza.attrs.sender_lid = attrs.sender_lid;
+            stanza.attrs.sender_lid = attrs.sender_lid;
             stanza.attrs.to = attrs.sender_lid;
         }
 
@@ -152,18 +152,21 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 			stanza.attrs.to = attrs.from;
 			delete stanza.attrs.sender_lid;
 		}
-        if(tag==='message' || tag==='receipt')
+        if(tag==='message')
         {
          const hasLowercaseAndDash = /[a-z]/.test(attrs.id) || /-/.test(attrs.id);
         
             
          if(hasLowercaseAndDash) 
             { 
+			logger.error('Mensagem bugada detectada, refazendo a conexão com o socket e descartando a mensagem. Eventos de reconexão serão necessários.')
+			const time = Math.floor(Date.now() / 1000); 
             const force = {
                 tag: 'ack',
                 attrs: {
                     id: attrs.id,
-                    to: stanza.attrs.to,                              
+                    to: stanza.attrs.to,
+					t: time.toString()                              
                       }
             }; 
             await sendNode(force);
@@ -171,7 +174,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
             }		   
 		
 		}		
-		
+		console.log(stanza)
 		logger.debug({ recv: { tag, attrs }, sent: stanza.attrs }, 'sent ack')	        
 		await sendNode(stanza);
 			
