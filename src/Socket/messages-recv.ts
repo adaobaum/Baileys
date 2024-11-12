@@ -116,7 +116,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 	
 	let sendActiveReceipts = false
 
-	const sendMessageAck = async({ tag, attrs, content }: BinaryNode) => {
+	const sendMessageAck = async({ tag, attrs, content }: BinaryNode, force=false) => {
 
 		const stanza: BinaryNode = {
 			tag: 'ack',
@@ -157,7 +157,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
          const hasLowercaseAndDash = /[a-z]/.test(attrs.id) || /-/.test(attrs.id);
         
             
-         if(hasLowercaseAndDash) 
+         if(hasLowercaseAndDash && force) 
             { 
 			logger.error('Mensagem bugada detectada, refazendo a conexão com o socket e descartando a mensagem. Eventos de reconexão serão necessários.')
 			const time = Math.floor(Date.now() / 1000); 
@@ -898,7 +898,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 						 cleanMessage(msg, authState.creds.me!.id);
 						 
 
-					     sendMessageAck(node);		
+					     sendMessageAck(node, true);		
 					   
 						
 								
@@ -907,8 +907,10 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
                         logger.error({ node }, "A conexão está fechada durante a tentativa de recuperação");
                     }
                 });
-            } else {                
+            } else { 
 				
+				if(!hasLowercaseAndDash)
+				{
                 await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);                
                 const isAnyHistoryMsg = getHistoryMsg(msg.message!);
                 if (isAnyHistoryMsg) {
@@ -919,6 +921,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 				 
 				 
 				 sendMessageAck(node);
+			    }
 				 	
                  await upsertMessage(msg, node.attrs.offline ? "append" : "notify");
 				
