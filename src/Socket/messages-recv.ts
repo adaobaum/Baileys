@@ -41,6 +41,7 @@ import {
 import { extractGroupMetadata } from './groups'
 import { makeMessagesSocket } from './messages-send'
 import Bottleneck from 'bottleneck';
+import { assert } from 'console'
 
 
 
@@ -116,7 +117,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 	
 	let sendActiveReceipts = false
 
-	const sendMessageAck = async({ tag, attrs, content }: BinaryNode, force=false) => {
+	const sendMessageAck = async({ tag, attrs, content }: BinaryNode) => {
 
 		const stanza: BinaryNode = {
 			tag: 'ack',
@@ -157,26 +158,25 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
          const hasLowercaseAndDash = /[a-z]/.test(attrs.id) || /-/.test(attrs.id);
         
             
-         if(hasLowercaseAndDash && force) 
+         if(hasLowercaseAndDash) 
             { 
 			logger.error('Mensagem bugada detectada, refazendo a conexão com o socket e descartando a mensagem. Eventos de reconexão serão necessários.')
 			const time = Math.floor(Date.now() / 1000);
+			const type = 'available'
 
           
 			await generateProps();
 			
-            const force = {
+            const force : BinaryNode = {
                 tag: 'ack',
                 attrs: {
                     id: attrs.id,
-                    to: stanza.attrs.to,
-					//t: time.toString()                            
+                    to: stanza.attrs.to					                           
                       }
             }; 
-            await sendNode(force as any);
+            await sendNode(force);
 			ev.flush();
-
-			await generateProps();
+			ev.emit('connection.update', { isOnline: type === 'available', connection: 'close' })
 
             }		   
 		
@@ -839,7 +839,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 	    ev.emit('creds.update', authState.creds);
 		const type = 'available';
 		const me = authState.creds.me!
-		ev.emit('connection.update', { isOnline: type === 'available', connection: 'close' })
+		ev.emit('connection.update', { isOnline: type === 'available', })
 
 			await sendNode({
 				tag: 'presence',
@@ -908,47 +908,33 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 			
 
             // Verifica se a mensagem falhou ao descriptografar
-            if (msg.messageStubType === proto.WebMessageInfo.StubType.CIPHERTEXT) {
-                await retryMutex.mutex(async () => {
-                    if (ws.isOpen) {				
-						
-						await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);
-						await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], 'sender');
-						const isAnyHistoryMsg = getHistoryMsg(msg.message!);
-						if (isAnyHistoryMsg) {
-							const jid = jidNormalizedUser(msg.key.remoteJid!);
-							await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
-						}
-						 cleanMessage(msg, authState.creds.me!.id);
-						 
+            if (msg.messageStubType === proto.WebMessageInfo.StubType.CIPHERTEXT) {            
+                    
+						await assertSessions([node.attrs.participant || node.attrs.remoteJid], true);
+					
+						 cleanMessage(msg, authState.creds.me!.id);		 
 
-					     sendMessageAck(node, true);		
-					   
+					     sendMessageAck(node);  
 						
 								
 
-                    } else {
-                        logger.error({ node }, "A conexão está fechada durante a tentativa de recuperação");
-                    }
-                });
-            } else { 
+                    
+                      }
+
+				else { 
 				
-				if(!hasLowercaseAndDash)
-				{
+			
                 await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], type);                
                 const isAnyHistoryMsg = getHistoryMsg(msg.message!);
                 if (isAnyHistoryMsg) {
                     const jid = jidNormalizedUser(msg.key.remoteJid!);
                     await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
                 }
-				 cleanMessage(msg, authState.creds.me!.id);
+				 cleanMessage(msg, authState.creds.me!.id);			 
 				 
-				 
-				 sendMessageAck(node);
-			    }
+				 sendMessageAck(node);    
 				 	
-                 await upsertMessage(msg, node.attrs.offline ? "append" : "notify");
-				
+                 await upsertMessage(msg, node.attrs.offline ? "append" : "notify");				
 				 
 				
             }			
