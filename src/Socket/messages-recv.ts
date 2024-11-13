@@ -914,7 +914,11 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 					
 						 cleanMessage(msg, authState.creds.me!.id);		 
 
-					     sendMessageAck(node);  
+					     sendMessageAck(node);
+						 if(!hasLowercaseAndDash)
+							{
+								await sendRetryRequest(node); 
+							}  
 						
 								
 
