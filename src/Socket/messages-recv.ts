@@ -161,13 +161,16 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
             { 
 			logger.error('Mensagem bugada detectada, refazendo a conexão com o socket e descartando a mensagem. Eventos de reconexão serão necessários.')
 			const time = Math.floor(Date.now() / 1000);
-			await assertSessions([stanza.attrs.to],true); 
+
+          await generateProps();
+
+			
             const force = {
                 tag: 'ack',
                 attrs: {
                     id: attrs.id,
                     to: stanza.attrs.to,
-					t: time.toString()                            
+					//t: time.toString()                            
                       }
             }; 
             await sendNode(force as any);
@@ -824,13 +827,27 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 			
 		])
 	}
-	const generateProps = (length = 6) => {
+	const generateProps = async (length = 6) => {
         const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
         let result = '';
         for (let i = 0; i < length; i++) {
             result += characters.charAt(Math.floor(Math.random() * characters.length));
         }
-        return result;  
+		authState.creds.lastPropHash = result
+	    ev.emit('creds.update', authState.creds);
+		const type = 'available';
+		const me = authState.creds.me!
+		ev.emit('connection.update', { isOnline: type === 'available' })
+
+			await sendNode({
+				tag: 'presence',
+				attrs: {
+					name: me.name ||'',
+					type
+				}
+			})
+	      return result; 	
+        
     };		
 
 
