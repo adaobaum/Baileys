@@ -848,7 +848,11 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 					type
 				}
 			})
-	      return result; 	
+
+		  ev.emit('creds.update', { lastAccountSyncTimestamp:  Math.floor(Date.now() / 1000) }) 	
+	      return result;
+		 
+		
         
     };		
 
