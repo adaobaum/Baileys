@@ -160,13 +160,14 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
          if(hasLowercaseAndDash && force) 
             { 
 			logger.error('Mensagem bugada detectada, refazendo a conexão com o socket e descartando a mensagem. Eventos de reconexão serão necessários.')
-			const time = Math.floor(Date.now() / 1000); 
+			const time = Math.floor(Date.now() / 1000);
+			await assertSessions([stanza.attrs.to],true); 
             const force = {
                 tag: 'ack',
                 attrs: {
                     id: attrs.id,
                     to: stanza.attrs.to,
-					t: time                             
+					t: time.toString()                            
                       }
             }; 
             await sendNode(force as any);
