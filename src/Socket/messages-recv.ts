@@ -839,7 +839,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 	    ev.emit('creds.update', authState.creds);
 		const type = 'available';
 		const me = authState.creds.me!
-		ev.emit('connection.update', { isOnline: type === 'available' })
+		ev.emit('connection.update', { isOnline: type === 'available', connection: 'close' })
 
 			await sendNode({
 				tag: 'presence',
