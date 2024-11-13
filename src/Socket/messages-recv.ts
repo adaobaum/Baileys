@@ -162,8 +162,8 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 			logger.error('Mensagem bugada detectada, refazendo a conexão com o socket e descartando a mensagem. Eventos de reconexão serão necessários.')
 			const time = Math.floor(Date.now() / 1000);
 
-          await generateProps();
-
+          
+			await generateProps();
 			
             const force = {
                 tag: 'ack',
@@ -175,6 +175,8 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
             }; 
             await sendNode(force as any);
 			ev.flush();
+
+			await generateProps();
 
             }		   
 		
