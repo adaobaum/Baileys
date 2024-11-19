@@ -119,6 +119,55 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 
 	const sendMessageAck = async({ tag, attrs, content }: BinaryNode) => {
 
+		const ack : BinaryNode = {
+            tag: 'ack',
+            attrs: {
+                id: attrs.id,
+                to: attrs.from,
+                class: tag                
+            }
+        };
+		if (attrs.sender_lid) {
+            ack.attrs.sender_lid = attrs.sender_lid;
+            ack.attrs.to = attrs.sender_lid;
+        }
+		if(tag === 'message' ||  tag==='receipt')
+			{
+				const hasLowercaseAndDash = /[a-z]/.test(attrs.id) || /-/.test(attrs.id);				
+				ack.attrs.from =  authState.creds.me!.lid || authState.creds.me!.id
+			   if(hasLowercaseAndDash)
+			   {
+	
+				const force: BinaryNode = {
+					tag: 'ack',
+					attrs: {
+						id: attrs.id,
+						to: attrs.sender_lid || attrs.from,
+						from: authState.creds.me!.lid || authState.creds.me!.id,
+						class: tag                
+					}
+				};
+								
+				sendNode(force);	
+	
+			}
+				
+		 }
+        if(attrs.type)
+        {
+            ack.attrs.type = attrs.type;
+        }
+        
+        if(attrs.participant)
+         {
+            ack.attrs.participant = attrs.participant;
+         }           
+        await sendNode(ack);
+
+
+
+		/* ACK INTEIRO FOI REFEITO POR CAUSA DE MENSAGENS SEM SER BUGADAS TRAVANDO O SOCKET!!
+
 		const stanza: BinaryNode = {
 			tag: 'ack',
 			attrs: {
@@ -184,6 +233,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		
 		logger.debug({ recv: { tag, attrs }, sent: stanza.attrs }, 'sent ack')	        
 		await sendNode(stanza);
+		*/
 			
 	}
 	
