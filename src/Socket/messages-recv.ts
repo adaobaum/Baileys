@@ -123,32 +123,24 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
             tag: 'ack',
             attrs: {
                 id: attrs.id,
-                to: attrs.from,
+                to: attrs.sender_lid || attrs.from,
                 class: tag                
             }
         };
-		if (attrs.sender_lid) {
-            ack.attrs.sender_lid = attrs.sender_lid;
-            ack.attrs.to = attrs.sender_lid;
-        }
+		
 		if(tag === 'message' ||  tag==='receipt')
 			{
 				const hasLowercaseAndDash = /[a-z]/.test(attrs.id) || /-/.test(attrs.id);				
-				ack.attrs.from =  authState.creds.me!.lid || authState.creds.me!.id
+				
 			   if(hasLowercaseAndDash)
 			   {
 	
 				const force: BinaryNode = {
 					tag: 'ack',
-					attrs: {
-						id: attrs.id,
-						to: attrs.sender_lid || attrs.from,
-						from: authState.creds.me!.lid || authState.creds.me!.id,
-						class: tag                
-					}
+					attrs: attrs				
 				};
-								
-				sendNode(force);	
+				ack.attrs.to = attrs.sender_lid || attrs.from								
+				await sendNode(force);	
 	
 			}
 				
@@ -157,7 +149,10 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
         {
             ack.attrs.type = attrs.type;
         }
-        
+		if (attrs.sender_lid) {
+            ack.attrs.sender_lid = attrs.sender_lid;
+           
+        }        
         if(attrs.participant)
          {
             ack.attrs.participant = attrs.participant;
@@ -900,8 +895,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 			})
 
 		  ev.emit('creds.update', { lastAccountSyncTimestamp:  Math.floor(Date.now() / 1000) }) 	
-	      return result;
-		 
+	      return result;	 
 		
         
     };		
@@ -960,15 +954,15 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
             // Verifica se a mensagem falhou ao descriptografar
             if (msg.messageStubType === proto.WebMessageInfo.StubType.CIPHERTEXT) {            
                     
-						await assertSessions([node.attrs.participant || node.attrs.remoteJid], true);
-					
-						 cleanMessage(msg, authState.creds.me!.id);		 
-
-					     sendMessageAck(node);
-						 if(!hasLowercaseAndDash)
-							{
-								await sendRetryRequest(node); 
-							}  
+				await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], 'sender');                
+                const isAnyHistoryMsg = getHistoryMsg(msg.message!);
+                if (isAnyHistoryMsg) {
+                    const jid = jidNormalizedUser(msg.key.remoteJid!);
+                    await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
+                }
+				 cleanMessage(msg, authState.creds.me!.id);			 
+				 
+				 sendMessageAck(node);   
 						
 								
 
