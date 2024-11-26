@@ -122,42 +122,21 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		const ack : BinaryNode = {
             tag: 'ack',
             attrs: {
-                id: attrs.id,
+                id: attrs.id.toUpperCase(),
                 to: attrs.sender_lid || attrs.from,
                 class: tag                
             }
-        };
+        };		
 		
-		if(tag === 'message' ||  tag==='receipt')
-			{
-				const hasLowercaseAndDash = /[a-z]/.test(attrs.id) || /-/.test(attrs.id);				
-				
-			   if(hasLowercaseAndDash)
-			   {
-	
-				const force: BinaryNode = {
-					tag: 'ack',
-					attrs: attrs				
-				};
-				ack.attrs.to = attrs.sender_lid || attrs.from								
-				await sendNode(force);	
-	
-			}
-				
-		 }
         if(attrs.type)
         {
             ack.attrs.type = attrs.type;
-        }
-		if (attrs.sender_lid) {
-            ack.attrs.sender_lid = attrs.sender_lid;
-           
-        }        
+        }		       
         if(attrs.participant)
          {
             ack.attrs.participant = attrs.participant;
          }           
-        await sendNode(ack);
+        sendNode(ack);
 
 
 
