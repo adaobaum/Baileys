@@ -112,24 +112,34 @@ export const makeSocket = (config: SocketConfig) => {
 
 	const sendPromise = promisify(ws.send)
 	/** send a raw buffer */
-	const sendRawMessage = async(data: Uint8Array | Buffer) => {
-		if(!ws.isOpen) {
-			throw new Boom('Connection Closed', { statusCode: DisconnectReason.connectionClosed })
+	const sendRawMessage = async (data: Uint8Array | Buffer) => {
+		if (!ws.isOpen) {
+			throw new Boom('Connection Closed', { statusCode: DisconnectReason.connectionClosed });
 		}
-
-		const bytes = noise.encodeFrame(data)
-		await promiseTimeout<void>(
-			connectTimeoutMs,
-			async(resolve, reject) => {
-				try {
-					await sendPromise.call(ws, bytes)
-					resolve()
-				} catch(error) {
-					reject(error)
+	
+		const bytes = noise.encodeFrame(data);
+	
+		try {
+			await promiseTimeout<void>(
+				connectTimeoutMs,
+				async (resolve, reject) => {
+					try {
+						await sendPromise.call(ws, bytes);
+						resolve();
+					} catch (error) {
+						reject(error);
+					}
 				}
-			}
-		)
-	}
+			);
+	
+			// Retorna algo para confirmar o sucesso
+			return { success: true, message: 'Message sent successfully' };
+		} catch (error) {
+			// Lança novamente o erro ou retorna informações sobre ele
+			throw new Boom('Failed to send message', { data: error });
+		}
+	};
+	
 
 	/** send a binary node */
 	const sendNode = (frame: BinaryNode) => {
