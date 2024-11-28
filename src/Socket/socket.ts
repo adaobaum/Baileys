@@ -411,7 +411,7 @@ export const makeSocket = (config: SocketConfig) => {
 			})
 	}
 
-	const startKeepAliveRequest = () => (
+	 const startKeepAliveRequest = () => (
 		keepAliveReq = setInterval(() => {
 			if(!lastDateRecv) {
 				lastDateRecv = new Date()

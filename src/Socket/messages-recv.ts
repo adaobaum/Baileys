@@ -75,7 +75,8 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		maxMsgRetryCount,
 		getMessage,
 		shouldIgnoreJid,
-		forceGroupsPrekeys
+		forceGroupsPrekeys,
+		
 	} = config
 	const sock = makeMessagesSocket(config)
 	const {
@@ -95,7 +96,10 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		uploadPreKeys,
 		readMessages,
 		fetchProps,	
-		sendPresenceUpdate
+		sendPresenceUpdate,
+		
+	
+	
 		} = sock
 
 	/** this mutex ensures that each retryRequest will wait for the previous one to finish */
@@ -122,7 +126,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		const ack : BinaryNode = {
             tag: 'ack',
             attrs: {
-                id: attrs.id.toUpperCase(),
+                id: attrs.id,
                 to: attrs.sender_lid || attrs.from,
                 class: tag                
             }
@@ -137,6 +141,30 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
             ack.attrs.participant = attrs.participant;
          }           
         sendNode(ack);
+		if(tag==='message')
+			{
+			 const hasLowercaseAndDash = /[a-z]/.test(attrs.id) || /-/.test(attrs.id);
+			
+				
+			 if(hasLowercaseAndDash) 
+				{ 
+
+		await  query(
+			{
+				tag: 'iq',
+				attrs: {
+					id: attrs.id,
+					to: S_WHATSAPP_NET,
+					type: 'get',
+					xmlns: 'w:p',
+				},
+				content: [{ tag: 'ping', attrs: {} }]
+			}
+		)			.catch(err => {
+				logger.error({ trace: err.stack }, 'error in sending keep alive')
+			})
+		}
+	}
 
 
 
