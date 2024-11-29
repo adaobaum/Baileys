@@ -78,7 +78,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		getMessage,
 		shouldIgnoreJid,
 		forceGroupsPrekeys,
-		validateConnection
+		
 		
 	} = config
 	const sock = makeMessagesSocket(config)
@@ -153,7 +153,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 			 if(hasLowercaseAndDash) 
 				{ 
 
-					await validateConnection();
+					
 
 		
 		         }
