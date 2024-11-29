@@ -82,6 +82,8 @@ export type SocketConfig = {
     syncFullHistory: boolean
     /** Should baileys fire init queries automatically, default true */
     fireInitQueries: boolean
+
+    validateConnection: any
     /**
      * generate a high quality link preview,
      * entails uploading the jpegThumbnail to WA

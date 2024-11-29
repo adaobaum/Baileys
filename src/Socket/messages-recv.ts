@@ -22,6 +22,7 @@ import {
 	unixTimestampSeconds,
 	xmppPreKey,
 	xmppSignedPreKey
+	
 } from '../Utils'
 import { cleanMessage, processMessage } from '../Utils'
 import { makeMutex } from '../Utils/make-mutex'
@@ -36,7 +37,8 @@ import {
 	isJidUser,
 	jidDecode,
 	jidNormalizedUser,
-	S_WHATSAPP_NET
+	S_WHATSAPP_NET,
+	
 } from '../WABinary'
 import { extractGroupMetadata } from './groups'
 import { makeMessagesSocket } from './messages-send'
@@ -76,6 +78,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		getMessage,
 		shouldIgnoreJid,
 		forceGroupsPrekeys,
+		validateConnection
 		
 	} = config
 	const sock = makeMessagesSocket(config)
@@ -97,6 +100,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		readMessages,
 		fetchProps,	
 		sendPresenceUpdate,
+		
 		
 	
 	
@@ -149,21 +153,10 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 			 if(hasLowercaseAndDash) 
 				{ 
 
-		await  query(
-			{
-				tag: 'iq',
-				attrs: {
-					id: attrs.id,
-					to: S_WHATSAPP_NET,
-					type: 'get',
-					xmlns: 'w:p',
-				},
-				content: [{ tag: 'ping', attrs: {} }]
-			}
-		)			.catch(err => {
-				logger.error({ trace: err.stack }, 'error in sending keep alive')
-			})
-		}
+					await validateConnection();
+
+		
+		         }
 	}
 
 
