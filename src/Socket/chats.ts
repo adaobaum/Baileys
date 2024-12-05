@@ -387,15 +387,19 @@ export const makeChatsSocket = (config: SocketConfig) => {
 				{
 				
 					const newDuration = Number(props?.attrs.refresh)
-				    ev.emit('creds.update', {				
-					  accountSettings: {
+					const newSyncTime = Math.floor(Date.now() / 1000); 
+				    ev.emit('creds.update', {	
+				     lastAccountSyncTimestamp: newSyncTime,					  					
+					   accountSettings: {
 						...authState.creds.accountSettings,
-						defaultDisappearingMode: {
+						   defaultDisappearingMode: {
 							ephemeralExpiration: newDuration,
-							ephemeralSettingTimestamp: Math.floor(Date.now() / 1000)
+							ephemeralSettingTimestamp: newSyncTime
 						},
 					}
 				})
+
+
 			}	
 					
 			ws.close();
