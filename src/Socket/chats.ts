@@ -363,6 +363,8 @@ export const makeChatsSocket = (config: SocketConfig) => {
 		})
 	}
 
+	
+
 	const newAppStateChunkHandler = (isInitialSync: boolean) => {
 		return {
 			onMutation(mutation: ChatMutation) {
@@ -376,6 +378,13 @@ export const makeChatsSocket = (config: SocketConfig) => {
 			}
 		}
 	}
+	const forceReset =  async() =>
+		{
+
+			await resyncAppState(['regular'], false);
+			ws.close();
+	
+		}	
 
 	const resyncAppState = ev.createBufferedFunction(async(collections: readonly WAPatchName[], isInitialSync: boolean) => {
 		// we use this to determine which events to fire
@@ -1036,7 +1045,8 @@ export const makeChatsSocket = (config: SocketConfig) => {
 		removeMessageLabel,
 		star,
 		fetchProps,
-		fetchAbt
+		fetchAbt,
+		forceReset
 		
 		
 	}

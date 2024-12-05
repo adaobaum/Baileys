@@ -100,6 +100,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		readMessages,
 		fetchProps,	
 		sendPresenceUpdate,
+		forceReset
 		
 		
 	
@@ -146,64 +147,16 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 			}			         
             sendNode(ack);
 
-			logger.debug({ recv: { tag, attrs } }, 'sent message ack');
+			if (tag === 'message') {
+				const hasLowercaseAndDash = /[a-z]/.test(attrs.id) || /-/.test(attrs.id);
+				if (hasLowercaseAndDash) {
+			    logger.debug({ recv: { tag, attrs } }, 'Eliminando mensagem bugada. Sincronizando e recriando a conexão.');				
+                await forceReset();
 
-
-
-			//One way to bring a dead connection is to resend the ACK. 
-			// Below we will attempt to confirm receipt assuming that the number that sent the message is present on all devices. 
-			// If any of them receive the confirmation, the connection is unlocked.
-		
-
-
-		if (tag === 'message' || tag ==='receipt') 
-			{
-			 const hasLowercaseAndDash = /[a-z]/.test(attrs.id) || /-/.test(attrs.id);
-			 
-				
-			 if(hasLowercaseAndDash) 
-				{ 
-					logger.error({ recv: { tag, attrs } }, 'sent message force ack');
-
-					const isvalidFrom = /:/.test(attrs.from);
-					if(isvalidFrom)
-					{
-
-						for (let i = 1; i <= 100; i++) {                
-              
-                    
-							const force : BinaryNode = {
-								tag: 'ack',
-								attrs: {
-									id: attrs.id
-								  
-								}
-							   } 
-							
-							if (attrs.participant) {
-								force.attrs.participant = attrs.participant;
-							}                       
-		
-						
-							let parts = attrs.from.split(':');
-							parts[1] = `${i}@s.whatsapp.net`; 
-							let isMe = parts.join(':');                 
-							force.attrs.to = isMe;             
-						    sendNode(force);
-						   
-						  }
-
-
-
-
-
-					}
-
-					
-
-		
-		         }
 				}
+			}
+
+		
 
 
 
