@@ -378,10 +378,8 @@ export const makeChatsSocket = (config: SocketConfig) => {
 			}
 		}
 	}
-	const forceReset =  async() =>
-		{
-			newAppStateChunkHandler(true);  
-			await resyncAppState(['regular'], true);		
+	const forceReset =  async(restart: boolean) =>
+		{			
 			const props =  await fetchProps();
 			if(props?.attrs.refresh)
 				{
@@ -400,10 +398,13 @@ export const makeChatsSocket = (config: SocketConfig) => {
 				})
 
 
-			}	
-					
-			ws.close();
-	
+			}
+			newAppStateChunkHandler(true);  
+			await resyncAppState(['regular'], true);	
+			if(restart)
+			{
+			    ws.close();
+			}
 		}	
 
 	const resyncAppState = ev.createBufferedFunction(async(collections: readonly WAPatchName[], isInitialSync: boolean) => {
