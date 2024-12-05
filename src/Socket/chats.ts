@@ -405,8 +405,7 @@ export const makeChatsSocket = (config: SocketConfig) => {
 			await resyncAppState(['regular'], true);
 			await delay(2000);	
 			if(restart)
-			{
-				
+			{				
 			    ws.close();
 				await delay(2000);
 				
