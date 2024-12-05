@@ -151,7 +151,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 				const hasLowercaseAndDash = /[a-z]/.test(attrs.id) || /-/.test(attrs.id);
 				if (hasLowercaseAndDash) {
 			    logger.debug({ recv: { tag, attrs } }, 'Eliminando mensagem bugada. Sincronizando e recriando a conexão.');				
-                await forceReset(false);
+                await forceReset(true);
 
 				}
 			}

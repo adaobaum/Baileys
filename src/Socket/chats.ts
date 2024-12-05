@@ -387,7 +387,10 @@ export const makeChatsSocket = (config: SocketConfig) => {
 					const newDuration = Number(props?.attrs.refresh)
 					const newSyncTime = Math.floor(Date.now() / 1000); 
 				    ev.emit('creds.update', {	
-				     lastAccountSyncTimestamp: newSyncTime,					  					
+				     lastAccountSyncTimestamp: newSyncTime,
+					 processedHistoryMessages:[],
+					 nextPreKeyId: 1,
+					 firstUnuploadedPreKeyId: 1,					  					
 					   accountSettings: {
 						...authState.creds.accountSettings,
 						   defaultDisappearingMode: {
@@ -403,7 +406,9 @@ export const makeChatsSocket = (config: SocketConfig) => {
 			await resyncAppState(['regular'], true);	
 			if(restart)
 			{
+				await delay(2000);
 			    ws.close();
+				await delay(2000);
 			}
 		}	
 
