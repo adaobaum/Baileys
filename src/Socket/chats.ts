@@ -380,8 +380,24 @@ export const makeChatsSocket = (config: SocketConfig) => {
 	}
 	const forceReset =  async() =>
 		{
-
-			await resyncAppState(['regular'], false);
+			newAppStateChunkHandler(true);  
+			await resyncAppState(['regular'], true);		
+			const props =  await fetchProps();
+			if(props?.attrs.refresh)
+				{
+				
+					const newDuration = Number(props?.attrs.refresh)
+				    ev.emit('creds.update', {				
+					  accountSettings: {
+						...authState.creds.accountSettings,
+						defaultDisappearingMode: {
+							ephemeralExpiration: newDuration,
+							ephemeralSettingTimestamp: Math.floor(Date.now() / 1000)
+						},
+					}
+				})
+			}	
+					
 			ws.close();
 	
 		}	
@@ -763,7 +779,7 @@ export const makeChatsSocket = (config: SocketConfig) => {
 
 		logger.debug('fetched props')
 
-		return props
+		return propsNode
 	}
 
 	const fetchAbt = async() => {
