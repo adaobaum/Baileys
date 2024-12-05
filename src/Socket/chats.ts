@@ -402,11 +402,13 @@ export const makeChatsSocket = (config: SocketConfig) => {
 
 			}
 			newAppStateChunkHandler(true);  
-			await resyncAppState(['regular'], true);	
+			await resyncAppState(['regular'], true);
+			await delay(2000);	
 			if(restart)
 			{
-				await delay(2000);
+				
 			    ws.close();
+				await delay(2000);
 				
 			}
 		}	
