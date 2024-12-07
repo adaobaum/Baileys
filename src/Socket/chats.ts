@@ -403,11 +403,11 @@ export const makeChatsSocket = (config: SocketConfig) => {
 			}
 			newAppStateChunkHandler(true);  
 			await resyncAppState(['regular'], true);
-			await delay(2000);	
+			await delay(5000);	
 			if(restart)
 			{				
 			    ws.close();
-				await delay(2000);
+				await delay(5000);
 				
 			}
 		}	
