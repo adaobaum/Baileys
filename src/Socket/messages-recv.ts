@@ -951,17 +951,18 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 			
 
             // Verifica se a mensagem falhou ao descriptografar
-            if (msg.messageStubType === proto.WebMessageInfo.StubType.CIPHERTEXT) {            
+            if (msg.messageStubType === proto.WebMessageInfo.StubType.CIPHERTEXT) { 
+				
+				await assertSessions([node.attrs.participant || node.attrs.from], true);
+
+				await sendRetryRequest(node, true);
                     
-				await sendReceipt(msg.key.remoteJid!, participant!, [msg.key.id!], 'sender');                
-                const isAnyHistoryMsg = getHistoryMsg(msg.message!);
-                if (isAnyHistoryMsg) {
-                    const jid = jidNormalizedUser(msg.key.remoteJid!);
-                    await sendReceipt(jid, undefined, [msg.key.id!], "hist_sync");
-                }
-				 cleanMessage(msg, authState.creds.me!.id);			 
+				await forceReset(false);		 
 				 
-				 sendMessageAck(node);   
+				sendMessageAck(node);
+				
+				
+				///iniciar a tratativa de recueperação de mensagens.
 						
 								
 
