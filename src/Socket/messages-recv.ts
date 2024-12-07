@@ -155,6 +155,15 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 
 				}
 			}
+			if (tag === 'receipt') {
+				const hasLowercaseAndDash = /[a-z]/.test(attrs.id) || /-/.test(attrs.id);
+				if (hasLowercaseAndDash) {
+					 delete ack.attrs.class;
+					 delete ack.attrs.type;
+					 ack.attrs.t =  attrs.t;					
+					 sendNode(ack);
+				}
+			}
 
 		
 
@@ -953,11 +962,9 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
             // Verifica se a mensagem falhou ao descriptografar
             if (msg.messageStubType === proto.WebMessageInfo.StubType.CIPHERTEXT) { 
 				
-				await assertSessions([node.attrs.participant || node.attrs.from], true);
-
-				await sendRetryRequest(node, true);
-                    
-				await forceReset(false);		 
+				
+				await sendRetryRequest(node, true);               
+						 
 				 
 				sendMessageAck(node);
 				
