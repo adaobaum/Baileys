@@ -1072,6 +1072,8 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		// it means -- the message hasn't reached all devices yet
 		// we'll retry sending the message here
 		if(attrs.phash) {
+			// aqui está havendo um loop reenviando a mensagem, o whatsapp pode reconhecer como SPAN e dar ban
+			return;
 			logger.info({ attrs }, 'received phash in ack, resending message...')
 			const msg = await getMessage(key)
 			if(msg) {
