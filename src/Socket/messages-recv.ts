@@ -146,24 +146,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 				ack.attrs.participant = attrs.participant;
 			}			         
             sendNode(ack);
-
-			if (tag === 'message') {
-				const hasLowercaseAndDash = /[a-z]/.test(attrs.id) || /-/.test(attrs.id);
-				if (hasLowercaseAndDash) {
-			    logger.error({ recv: { tag, attrs } }, 'Eliminando mensagem bugada. Sincronizando e recriando a conexão.');				
-                await forceReset(true);
-
-				}
-			}
-			if (tag === 'receipt') {
-				const hasLowercaseAndDash = /[a-z]/.test(attrs.id) || /-/.test(attrs.id);
-				if (hasLowercaseAndDash) {
-					 delete ack.attrs.class;
-					 delete ack.attrs.type;
-					 ack.attrs.t =  attrs.t;					
-					 sendNode(ack);
-				}
-			}
+			
 
 		
 
