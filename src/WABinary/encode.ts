@@ -4,10 +4,19 @@ import { FullJid, jidDecode } from './jid-utils'
 import type { BinaryNode, BinaryNodeCodingOptions } from './types'
 
 export const encodeBinaryNode = (
-	{ tag, attrs, content }: BinaryNode,
+	node: BinaryNode,
 	opts: Pick<BinaryNodeCodingOptions, 'TAGS' | 'TOKEN_MAP'> = constants,
 	buffer: number[] = [0]
-) => {
+): Buffer => {
+	const encoded = encodeBinaryNodeInner(node, opts, buffer)
+	return Buffer.from(encoded)
+}
+
+const encodeBinaryNodeInner = (
+	{ tag, attrs, content }: BinaryNode,
+	opts: Pick<BinaryNodeCodingOptions, 'TAGS' | 'TOKEN_MAP'>,
+	buffer: number[]
+): number[] => {
 	const { TAGS, TOKEN_MAP } = opts
 
 	const pushByte = (value: number) => buffer.push(value & 0xff)
@@ -19,9 +28,12 @@ export const encodeBinaryNode = (
 		}
 	}
 
-	const pushBytes = (bytes: Uint8Array | Buffer | number[]) => (
-		bytes.forEach (b => buffer.push(b))
-	)
+	const pushBytes = (bytes: Uint8Array | Buffer | number[]) => {
+		for(const b of bytes) {
+			buffer.push(b)
+		}
+	}
+
 	const pushInt16 = (value: number) => {
 		pushBytes([(value >> 8) & 0xff, value & 0xff])
 	}
@@ -142,8 +154,7 @@ export const encodeBinaryNode = (
 			return false
 		}
 
-		for(let i = 0;i < str.length;i++) {
-			const char = str[i]
+		for(const char of str) {
 			const isInNibbleRange = char >= '0' && char <= '9'
 			if(!isInNibbleRange && char !== '-' && char !== '.') {
 				return false
@@ -158,8 +169,7 @@ export const encodeBinaryNode = (
 			return false
 		}
 
-		for(let i = 0;i < str.length;i++) {
-			const char = str[i]
+		for(const char of str) {
 			const isInNibbleRange = char >= '0' && char <= '9'
 			if(!isInNibbleRange && !(char >= 'A' && char <= 'F') && !(char >= 'a' && char <= 'f')) {
 				return false
@@ -179,8 +189,6 @@ export const encodeBinaryNode = (
 			pushByte(tokenIndex.index)
 		} else if(isNibble(str)) {
 			writePackedBytes(str, 'nibble')
-		} else if(isHex(str)) {
-			writePackedBytes(str, 'hex')
 		} else if(str) {
 			const decodedJid = jidDecode(str)
 			if(decodedJid) {
@@ -224,7 +232,7 @@ export const encodeBinaryNode = (
 	} else if(Array.isArray(content)) {
 		writeListStart(content.length)
 		for(const item of content) {
-			encodeBinaryNode(item, opts, buffer)
+			encodeBinaryNodeInner(item, opts, buffer)
 		}
 	} else if(typeof content === 'undefined') {
 		// do nothing
@@ -232,5 +240,5 @@ export const encodeBinaryNode = (
 		throw new Error(`invalid children for header "${tag}": ${content} (${typeof content})`)
 	}
 
-	return Buffer.from(buffer)
+	return buffer
 }
