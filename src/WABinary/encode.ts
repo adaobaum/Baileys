@@ -164,19 +164,18 @@ const encodeBinaryNodeInner = (
 		return true
 	}
 	
-
 	const isHex = (str) => {
-		if (str.length > TAGS.PACKED_MAX) {
-				return false;
-		}
-		for (const char of str) {
-				const isInNibbleRange = char >= '0' && char <= '9';
-				if (!isInNibbleRange && !(char >= 'A' && char <= 'F')) {
-					return false;
-				}
-		}
-		return true;
-	};
+        	if (str.length > TAGS.PACKED_MAX) {
+            		return false;
+        	}
+        	for (const char of str) {
+            		const isInNibbleRange = char >= '0' && char <= '9';
+            		if (!isInNibbleRange && !(char >= 'A' && char <= 'F')) {
+                		return false;
+            		}
+        	}
+        	return true;
+    	};
 
 	const writeString = (str: string) => {
 		const tokenIndex = TOKEN_MAP[str]
@@ -188,6 +187,8 @@ const encodeBinaryNodeInner = (
 			pushByte(tokenIndex.index)
 		} else if(isNibble(str)) {
 			writePackedBytes(str, 'nibble')
+		} else if(isHex(str)) {
+			writePackedBytes(str, 'hex') 
 		} else if(str) {
 			const decodedJid = jidDecode(str)
 			if(decodedJid) {
