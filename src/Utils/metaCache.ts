@@ -87,9 +87,9 @@ export const DeleteCache = async () => {
 
     try {
         await rm(folder, { recursive: true, force: true });
-        console.log(`Cache deletado com sucesso: ${folder}`);
+        
     } catch (error) {
-        console.error(`Erro ao deletar cache: ${error}`);
+       
     }
 };
 
