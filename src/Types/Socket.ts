@@ -83,6 +83,10 @@ export type SocketConfig = {
     /** Should baileys fire init queries automatically, default true */
     fireInitQueries: boolean
 
+    metaCache : boolean | undefined
+
+     /** Implementação nativa de cache de metadados de grupo sem a necessidade de um banco de dados */
+
     /**
      * generate a high quality link preview,
      * entails uploading the jpegThumbnail to WA

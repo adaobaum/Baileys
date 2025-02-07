@@ -19,6 +19,7 @@ export const makeChatsSocket = (config: SocketConfig) => {
 		appStateMacVerification,
 		shouldIgnoreJid,
 		shouldSyncHistoryMessage,
+		metaCache
 	} = config
 	const sock = makeSocket(config)
 	const {
@@ -1072,7 +1073,8 @@ export const makeChatsSocket = (config: SocketConfig) => {
 		star,
 		fetchProps,
 		fetchAbt,
-		forceReset
+		forceReset,
+		metaCache
 		
 		
 	}

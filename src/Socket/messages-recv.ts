@@ -100,7 +100,9 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		readMessages,
 		fetchProps,	
 		sendPresenceUpdate,
-		forceReset
+		forceReset,
+		metaCache,
+		groupMetadata
 		
 		
 	
@@ -144,7 +146,11 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 			if(attrs.participant)
 			{
 				ack.attrs.participant = attrs.participant;
-			}			         
+			}
+			if(tag==='call')
+			{
+				delete ack.attrs.class;
+			}				         
             sendNode(ack);
 			
 
@@ -347,15 +353,19 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		}
 	}
 
-	const handleGroupNotification = (
+	const handleGroupNotification =  async(
 		participant: string,
 		child: BinaryNode,
 		msg: Partial<proto.IWebMessageInfo>
 	) => {
 		const participantJid = getBinaryNodeChild(child, 'participant')?.attrs?.jid || participant
+		
 		switch (child?.tag) {
 		case 'create':
-			const metadata = extractGroupMetadata(child)
+		const metadata = extractGroupMetadata(child)
+
+		if(metaCache) await groupMetadata(metadata.id, true)
+				
 
 			msg.messageStubType = WAMessageStubType.GROUP_CREATE
 			msg.messageStubParameters = [metadata.subject]

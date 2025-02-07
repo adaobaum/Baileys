@@ -74,6 +74,7 @@ export const DEFAULT_CONNECTION_CONFIG: SocketConfig = {
 	shouldIgnoreJid: () => false,
 	forceGroupsPrekeys: true,
 	linkPreviewImageThumbnailWidth: 192,
+	metaCache:false,
 	transactionOpts: { maxCommitRetries: 10, delayBetweenTriesMs: 3000 },
 	generateHighQualityLinkPreview: false,
 	options: { },

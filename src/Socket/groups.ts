@@ -1,12 +1,13 @@
+import { Metadata } from 'libphonenumber-js'
 import { proto } from '../../WAProto'
 import { GroupMetadata, GroupParticipant, ParticipantAction, SocketConfig, WAMessageKey, WAMessageStubType } from '../Types'
-import { generateMessageID, generateMessageIDV2, unixTimestampSeconds } from '../Utils'
+import { generateMessageID, generateMessageIDV2, unixTimestampSeconds, GetMetaCache, SaveMetaCache, ExportMetaCache } from '../Utils'
 import { BinaryNode, getBinaryNodeChild, getBinaryNodeChildren, getBinaryNodeChildString, jidEncode, jidNormalizedUser } from '../WABinary'
 import { makeChatsSocket } from './chats'
 
 export const makeGroupsSocket = (config: SocketConfig) => {
 	const sock = makeChatsSocket(config)
-	const { authState, ev, query, upsertMessage } = sock
+	const { authState, ev, query, upsertMessage, metaCache } = sock
 
 	const groupQuery = async(jid: string, type: 'get' | 'set', content: BinaryNode[]) => (
 		query({
@@ -20,15 +21,34 @@ export const makeGroupsSocket = (config: SocketConfig) => {
 		})
 	)
 
-	const groupMetadata = async(jid: string) => {
+	const groupMetadata = async(jid: string, ignoreCache = false) => {
+		
+		if (metaCache && !ignoreCache) {
+			const cachedGroup = await GetMetaCache(authState, jid);
+			if (cachedGroup) return cachedGroup;
+		}
 		const result = await groupQuery(
 			jid,
 			'get',
 			[ { tag: 'query', attrs: { request: 'interactive' } } ]
 		)
+		if(metaCache){
+		await SaveMetaCache(authState,jid, extractGroupMetadata(result));
+		}
 		return extractGroupMetadata(result)
 	}
 
+    const GroupsMetaCache = async () => {
+		const errorResponse = { error: true, message: 'Enable MetaCache to use this function' };
+	
+		if (!metaCache) {
+			return errorResponse;
+		}
+	
+		const metaDados = await ExportMetaCache(authState);
+		return metaDados || errorResponse;
+	};
+	
 
 	const groupFetchAllParticipating = async() => {
 		const result = await query({
