@@ -108,6 +108,7 @@ export const makeGroupsSocket = (config: SocketConfig) => {
 	return {
 		...sock,
 		groupMetadata,
+		GroupsMetaCache,
 		groupCreate: async(subject: string, participants: string[]) => {
 			const key = generateMessageID()
 			const result = await groupQuery(
