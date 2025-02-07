@@ -356,14 +356,12 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		msg: Partial<proto.IWebMessageInfo>
 	) => {
 		const participantJid = getBinaryNodeChild(child, 'participant')?.attrs?.jid || participant;
-		const metadata = extractGroupMetadata(child)
-		if(metaCache)
-			{
-			await groupMetadata(metadata.id,true);
-			}				
+		
+					
 		
 		switch (child?.tag) {
-		case 'create':	
+		case 'create':
+		const metadata = extractGroupMetadata(child)
 
 		
 
@@ -859,6 +857,11 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 						}
 						msg.participant ??= node.attrs.participant
 						msg.messageTimestamp = +node.attrs.t
+
+						if(isJidGroup(remoteJid) && metaCache)
+							{
+							await groupMetadata(remoteJid,true);
+							}	
 
 						const fullMsg = proto.WebMessageInfo.fromObject(msg)
 						await upsertMessage(fullMsg, 'append')
