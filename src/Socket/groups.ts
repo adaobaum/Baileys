@@ -1,7 +1,7 @@
 import { Metadata } from 'libphonenumber-js'
 import { proto } from '../../WAProto'
 import { GroupMetadata, GroupParticipant, ParticipantAction, SocketConfig, WAMessageKey, WAMessageStubType } from '../Types'
-import { generateMessageID, generateMessageIDV2, unixTimestampSeconds, GetMetaCache, SaveMetaCache, ExportMetaCache } from '../Utils'
+import { generateMessageID, generateMessageIDV2, unixTimestampSeconds, GetMetaCache, SaveMetaCache, ExportMetaCache, DeleteCache } from '../Utils'
 import { BinaryNode, getBinaryNodeChild, getBinaryNodeChildren, getBinaryNodeChildString, jidEncode, jidNormalizedUser } from '../WABinary'
 import { makeChatsSocket } from './chats'
 
@@ -25,7 +25,13 @@ export const makeGroupsSocket = (config: SocketConfig) => {
 		
 		if (metaCache && !ignoreCache) {
 			const cachedGroup = await GetMetaCache(authState, jid);
-			if (cachedGroup) return cachedGroup;
+			if (cachedGroup){ return cachedGroup}
+		}
+		if(!metaCache)
+		{
+
+			await DeleteCache();
+
 		}
 		const result = await groupQuery(
 			jid,
@@ -40,13 +46,14 @@ export const makeGroupsSocket = (config: SocketConfig) => {
 
     const GroupsMetaCache = async () => {
 		const errorResponse = { error: true, message: 'Enable MetaCache to use this function' };
+		const failResponse = { error: true, message: 'Falha ao obter os grupos via cache.' };
 	
 		if (!metaCache) {
 			return errorResponse;
 		}
 	
 		const metaDados = await ExportMetaCache(authState);
-		return metaDados || errorResponse;
+		return metaDados ||failResponse;
 	};
 	
 

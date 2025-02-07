@@ -147,10 +147,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 			{
 				ack.attrs.participant = attrs.participant;
 			}
-			if(tag==='call')
-			{
-				delete ack.attrs.class;
-			}				         
+						         
             sendNode(ack);
 			
 
@@ -358,14 +355,17 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		child: BinaryNode,
 		msg: Partial<proto.IWebMessageInfo>
 	) => {
-		const participantJid = getBinaryNodeChild(child, 'participant')?.attrs?.jid || participant
+		const participantJid = getBinaryNodeChild(child, 'participant')?.attrs?.jid || participant;
+		const metadata = extractGroupMetadata(child)
+		if(metaCache)
+			{
+			await groupMetadata(metadata.id,true);
+			}				
 		
 		switch (child?.tag) {
-		case 'create':
-			const metadata = extractGroupMetadata(child)
+		case 'create':	
 
-			if(metaCache) await groupMetadata(metadata.id, true)
-				
+		
 
 			msg.messageStubType = WAMessageStubType.GROUP_CREATE
 			msg.messageStubParameters = [metadata.subject]

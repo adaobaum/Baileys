@@ -43,6 +43,7 @@ export const makeChatsSocket = (config: SocketConfig) => {
 		const { [keyId]: key } = await authState.keys.get('app-state-sync-key', [keyId])
 		return key
 	}
+	
 
 	const fetchPrivacySettings = async(force = false) => {
 		if(!privacySettings || force) {
