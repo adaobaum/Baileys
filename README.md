@@ -1,3 +1,14 @@
+
+
+
+New configuration for the socket with a native library cache.
+
+metaCache: true | false,
+
+If enabled generates a powerful local cache for group metadata
+
+
+
 # Baileys - Typescript/Javascript WhatsApp Web API
 
 ### Important Note
