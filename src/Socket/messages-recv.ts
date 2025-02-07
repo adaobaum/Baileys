@@ -353,7 +353,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		}
 	}
 
-	const handleGroupNotification = (
+	const handleGroupNotification = async (
 		participant: string,
 		child: BinaryNode,
 		msg: Partial<proto.IWebMessageInfo>
@@ -364,7 +364,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		case 'create':
 			const metadata = extractGroupMetadata(child)
 
-			if(metaCache) groupMetadata(metadata.id, true)
+			if(metaCache) await groupMetadata(metadata.id, true)
 				
 
 			msg.messageStubType = WAMessageStubType.GROUP_CREATE
