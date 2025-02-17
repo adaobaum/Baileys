@@ -134,7 +134,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
             tag: 'ack',
             attrs: {
                 id: attrs.id,
-                to: attrs.sender_lid || attrs.from,
+                to: attrs.from,
                 class: tag                
             }
         };		
@@ -146,11 +146,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 			if(attrs.participant)
 			{
 				ack.attrs.participant = attrs.participant;
-			}
-			if(tag==='call')
-			{
-				ack.attrs.to = attrs.to;
-			}
+			}			
 						         
             sendNode(ack);
 			
