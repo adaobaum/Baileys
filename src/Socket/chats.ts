@@ -207,6 +207,7 @@ export const makeChatsSocket = (config: SocketConfig) => {
 		}
 	}
 
+
 	/** update the profile picture for yourself or a group */
 	const updateProfilePicture = async(jid: string, content: WAMediaUpload) => {
 		const { img } = await generateProfilePicture(content)
